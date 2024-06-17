@@ -1,0 +1,70 @@
+version: '3.7'
+
+volumes:
+  test_esdata:
+  test_redis_data:
+
+networks:
+  test_network:
+    driver: bridge
+
+services:
+  app:
+    container_name: test_app
+    build: ../../app/.
+    volumes:
+      - ../../:/app
+    restart: always
+    expose:
+      - 8000
+    ports:
+      - 8001:8000
+    depends_on:
+      - elasticsearch
+      - redis
+    env_file:
+      - .env.test
+    networks:
+      - test_network
+
+  elasticsearch:
+    container_name: test_elasticsearch
+    image: elasticsearch:8.6.2
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms200m -Xmx200m"
+    expose:
+      - 9200
+    ports:
+      - 9201:9200
+    volumes:
+      - test_esdata:/usr/share/elasticsearch/data
+    networks:
+      - test_network
+
+  redis:
+    container_name: test_redis
+    image: redis:alpine
+    expose:
+      - 6379
+    ports:
+      - 6378:6379
+    volumes:
+      - test_redis_data:/var/lib/redis
+    networks:
+      - test_network
+
+  tests:
+    container_name: test_runner
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env.test
+    restart: always
+    volumes:
+      - ../..:/tests
+    networks:
+      - test_network
+

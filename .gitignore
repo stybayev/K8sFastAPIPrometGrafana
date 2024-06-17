@@ -1,0 +1,24 @@
+venv/
+.venv/
+.vscode/
+__pycache__
+__pycache__/
+*__pycache__/
+*__pycache__
+
+tests/functional/.env.test
+questions
+.idea
+*.idea
+*.DS_Store
+.DS_Store
+
+# env
+.*env
+env/
+.env
+.env.local
+.env.production
+.env.development
+*.env.test
+

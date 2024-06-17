@@ -1,0 +1,18 @@
+version: '3.7'
+
+networks:
+  test_network:
+    driver: bridge
+
+services:
+  test_runner_unit:
+    image: python:3.10-slim
+    container_name: test_runner_unit
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ../..:/tests
+    working_dir: /tests
+    networks:
+      - test_network

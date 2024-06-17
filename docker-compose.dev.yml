@@ -1,0 +1,132 @@
+version: '3.7'
+
+x-app: &app
+  env_file:
+    - .env
+  restart: always
+
+
+volumes:
+  esdata:
+  dbdata:
+  redis_data:
+  static:
+  media:
+  minio_storage:
+
+
+services:
+  django_admin:
+    build: django_admin
+    image: app-django-admin:dev
+    volumes:
+      - media:/opt/app/media
+      - static:/opt/app/static
+    depends_on:
+      - db
+    env_file:
+      - .env
+    expose:
+      - ${DJANGO_PORT}
+    restart: unless-stopped
+
+  app:
+    container_name: app
+    build: ./app
+    <<: *app
+    volumes:
+      - .:/app
+    restart: always
+    expose:
+      - ${UVICORN_PORT}
+    ports:
+      - ${UVICORN_PORT}:${UVICORN_PORT}
+    depends_on:
+      - db
+      - elasticsearch
+      - redis
+
+  file_api:
+    container_name: file_api
+    build: ./file_api
+    <<: *app
+    volumes:
+      - .:/file_api
+    ports:
+      - "8081:8081"
+    depends_on:
+      - minio
+      - db
+    
+  etl:
+    container_name: etl
+    build: ./etl/postgres_to_es
+    env_file:
+      - .env
+    <<: *app
+    depends_on:
+      - db
+      - elasticsearch
+      - redis
+
+  elasticsearch:
+    image: elasticsearch:8.6.2
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms200m -Xmx200m"
+    expose:
+      - 9200
+    ports:
+      - ${ELASTIC_PORT}:9200
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+
+  db:
+    image: postgis/postgis:14-master
+    container_name: db
+    shm_size: 1g
+    <<: *app
+    expose:
+      - 5432
+    ports:
+      - ${POSTGRES_PORT}:5432
+    env_file:
+      - .env
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+      - ./etl/dump.sql:/docker-entrypoint-initdb.d/dump.sql
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+    expose:
+      - 6379
+    ports:
+      - ${REDIS_PORT}:6379
+    volumes:
+      - redis_data:/var/lib/redis
+
+  nginx:
+    image: nginx:1.24
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/configs/:/etc/nginx/conf.d/:ro
+      - static:/data/static/:ro
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+
+  minio:
+    image: minio/minio
+    <<: *app
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_storage:/data
+    command: server --console-address ":9001" /data
