@@ -16,6 +16,20 @@ volumes:
 
 
 services:
+  auth:
+    container_name: auth
+    build: ./auth
+    <<: *app
+    volumes:
+      - .:/auth
+    expose:
+      - ${AUTH_API_UVICORN_PORT}
+    ports:
+      - ${AUTH_API_UVICORN_PORT}:${AUTH_API_UVICORN_PORT}
+    depends_on:
+      - db
+      - redis
+
   django_admin:
     build: django_admin
     image: app-django-admin:dev
