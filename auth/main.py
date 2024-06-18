@@ -5,11 +5,12 @@ from redis.asyncio import Redis
 from auth.core.config import settings
 from auth.db.postgres import create_database
 from auth.db.redis import redis
+from auth.api.v1 import users, roles
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    redis.redis = Redis(host=settings.redis_host, port=settings.redis_port)
+    # redis.redis = Redis(host=settings.redis_host, port=settings.redis_port)
 
     # TODO: создание БД надо будет переделать через alembic
     await create_database()
@@ -27,7 +28,5 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
+app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
+app.include_router(roles.router, prefix="/api/v1/roles", tags=["roles"])
