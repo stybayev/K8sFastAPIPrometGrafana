@@ -7,7 +7,7 @@ from auth.services.users import UserService, get_user_service
 router = APIRouter()
 
 
-@router.post("/users", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register_user(user: UserCreate, service: UserService = Depends(get_user_service)):
     """
     ## Регистрация нового пользователя
@@ -62,7 +62,7 @@ async def logout_user():
     pass
 
 
-@router.patch("/users/me", response_model=dict)
+@router.patch("/me", response_model=dict)
 async def update_user_credentials():
     """
     Изменение логина или пароля
