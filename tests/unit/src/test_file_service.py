@@ -11,7 +11,7 @@ import pytest
 
 @pytest.mark.anyio
 async def test_download_file_success(mock_db_session, mock_minio_client,
-                                     async_client, override_dependencies):
+                                     file_api_async_client, file_api_override_dependencies):
     short_name = 'short_name_123'
     path_in_storage = 'test/path'
     filename = 'test.txt'
@@ -34,7 +34,7 @@ async def test_download_file_success(mock_db_session, mock_minio_client,
     mock_response.content.iter_chunked = mock_iter_chunked
     mock_minio_client.get_object.return_value = mock_response
 
-    response = await async_client.get(f'/download/{short_name}')
+    response = await file_api_async_client.get(f'/download/{short_name}')
     response_content = await response.aread()
 
     assert response.status_code == status.HTTP_200_OK
@@ -43,12 +43,12 @@ async def test_download_file_success(mock_db_session, mock_minio_client,
 
 
 @pytest.mark.anyio
-async def test_download_file_not_found(mock_db_session, async_client, override_dependencies):
+async def test_download_file_not_found(mock_db_session, file_api_async_client, file_api_override_dependencies):
     short_name = 'short_name_123'
 
     mock_db_session.execute.return_value.scalar_one_or_none = MagicMock(return_value=None)
 
-    response = await async_client.get(f'/download/{short_name}')
+    response = await file_api_async_client.get(f'/download/{short_name}')
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json() == {'detail': 'File not found'}
@@ -56,7 +56,7 @@ async def test_download_file_not_found(mock_db_session, async_client, override_d
 
 @pytest.mark.anyio
 async def test_get_presigned_url_success(mock_db_session, mock_minio_client,
-                                         async_client, override_dependencies):
+                                         file_api_async_client, file_api_override_dependencies):
     """
     Тест успешного получения подписанной ссылки.
     """
@@ -75,14 +75,14 @@ async def test_get_presigned_url_success(mock_db_session, mock_minio_client,
     mock_db_session.execute.return_value.scalar_one_or_none = MagicMock(return_value=mock_file_record)
     mock_minio_client.get_presigned_url.return_value = mock_presigned_url
 
-    response = await async_client.get(f'/presigned-url/{short_name}')
+    response = await file_api_async_client.get(f'/presigned-url/{short_name}')
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == mock_presigned_url
 
 
 @pytest.mark.anyio
-async def test_get_presigned_url_not_found(mock_db_session, async_client, override_dependencies):
+async def test_get_presigned_url_not_found(mock_db_session, file_api_async_client, file_api_override_dependencies):
     """
     Тест получения ошибки 404 при попытке получить подписанную ссылку для несуществующего файла.
     """
@@ -90,7 +90,7 @@ async def test_get_presigned_url_not_found(mock_db_session, async_client, overri
 
     mock_db_session.execute.return_value.scalar_one_or_none = MagicMock(return_value=None)
 
-    response = await async_client.get(f'/presigned-url/{short_name}')
+    response = await file_api_async_client.get(f'/presigned-url/{short_name}')
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json() == {'detail': 'File not found'}
