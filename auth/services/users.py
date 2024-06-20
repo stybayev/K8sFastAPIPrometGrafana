@@ -1,8 +1,9 @@
+from select import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
+from sqlalchemy.exc import IntegrityError
 from functools import lru_cache
 from typing import Optional
-from fastapi import Depends
+from fastapi import Depends, HTTPException, status
 from auth.db.postgres import get_db_session
 from auth.models.users import User
 
@@ -25,9 +26,13 @@ class UserService:
         """
         new_user = User(login=login, password=password, first_name=first_name, last_name=last_name)
         self.db_session.add(new_user)
-        await self.db_session.commit()
-        await self.db_session.refresh(new_user)
-        return new_user
+        try:
+            await self.db_session.commit()
+            await self.db_session.refresh(new_user)
+            return new_user
+        except IntegrityError:
+            await self.db_session.rollback()
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Login already registered")
 
 
 @lru_cache()
