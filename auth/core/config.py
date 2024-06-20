@@ -1,8 +1,8 @@
 import os
 from logging import config as logging_config
-from pydantic import BaseSettings, Field
+from pydantic import  Field
 from app.core.logger import LOGGING
-
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class DataBaseSettings(BaseSettings):
     user: str = ...
@@ -33,6 +33,12 @@ class Settings(BaseSettings):
     # Postgres
     db: DataBaseSettings = DataBaseSettings()
     log_sql_queries: bool = False
+
+    # JWT
+    authjwt_secret_key: str = Field(default='practicum', env='SECRET_KEY')
+    authjwt_algorithm: str = Field(default='HS256', env='ALGORITHM')
+    authjwt_access_token_expires: int = Field(default=30, env='ACCESS_TOKEN_EXPIRE_MINUTES')
+    authjwt_refresh_token_expires: int = Field(default=1410, env='REFRESH_TOKEN_EXPIRE_MINUTES')
 
     class Config:
         env_file = '.env'

@@ -6,6 +6,7 @@ from auth.core.config import settings
 from auth.db.postgres import create_database
 from auth.db.redis import redis
 from auth.api.v1 import users, roles
+from auth.core.security import get_config
 
 
 @asynccontextmanager
