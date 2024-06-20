@@ -28,9 +28,6 @@ async def register_user(user: UserCreate, service: UserService = Depends(get_use
       - `first_name`: Имя пользователя.
       - `last_name`: Фамилия пользователя.
     """
-    existing_user = await service.get_by_login(user.login)
-    if existing_user:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Login already registered")
 
     new_user = await service.create_user(login=user.login, password=user.password, first_name=user.first_name,
                                          last_name=user.last_name)

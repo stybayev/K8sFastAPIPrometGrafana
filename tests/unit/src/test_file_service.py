@@ -1,9 +1,7 @@
-from sqlalchemy.future import select
 from file_api.models.files import FileDbModel
 from unittest.mock import AsyncMock, MagicMock
 from aiohttp import ClientResponse, StreamReader
 from starlette.responses import StreamingResponse
-
 from file_api.utils.exceptions import NotFoundException
 from fastapi import status
 import pytest
