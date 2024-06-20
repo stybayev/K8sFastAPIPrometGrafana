@@ -1,6 +1,7 @@
 import typer
 import psycopg2
 import os
+import logging
 from datetime import datetime
 from dotenv import load_dotenv
 from uuid import uuid4
@@ -31,7 +32,7 @@ def create_su(login: str, psw: str):
             cursor.execute(query)
             pg_conn.commit()
         except psycopg2.errors.UniqueViolation:
-            print('Учетная запись администратора уже существует.')
+            logging.error('Учетная запись администратора уже существует')
             return
         query = (
             "INSERT INTO auth.users (id, login, password, first_name, created_at) "
@@ -46,7 +47,7 @@ def create_su(login: str, psw: str):
         cursor.execute(query)
         pg_conn.commit()
         cursor.close()
-    print(f'Учетная запись {login} успешно создана')
+    logging.info(f'Учетная запись {login} успешно создана')
     pg_conn.close()
 
 
