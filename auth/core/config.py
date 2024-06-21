@@ -21,8 +21,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file='.env', extra='allow')
     # App
     project_name: str = 'Auth API'
-    uvicorn_host: str = '0.0.0.0'
-    uvicorn_port: int = 8082
+    auth_api_uvicorn_host: str = '0.0.0.0'
+    auth_api_uvicorn_port: int = 8082
 
     # Redis
     redis_host: str = '0.0.0.0'
