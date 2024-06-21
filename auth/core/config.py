@@ -1,19 +1,16 @@
-import os
-from logging import config as logging_config
-from pydantic import  Field
-from app.core.logger import LOGGING
+from dotenv import load_dotenv
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+load_dotenv()
+
+
 class DataBaseSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix='POSTGRES_')
     user: str = ...
     password: str = ...
     db: str = ...
     host: str = ...
     port: int = ...
-
-    class Config:
-        env_file = '.env'
-        env_prefix = 'POSTGRES_'
 
     @property
     def url(self):
@@ -21,34 +18,33 @@ class DataBaseSettings(BaseSettings):
 
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file='.env', extra='allow')
     # App
-    project_name: str = Field(default='Auth API', env='File API')
-    uvicorn_host: str = Field(default='0.0.0.0', env='AUTH_API_UVICORN_HOST')
-    uvicorn_port: int = Field(default=8082, env='AUTH_API_UVICORN_PORT')
+    project_name: str = 'Auth API'
+    uvicorn_host: str = '0.0.0.0'
+    uvicorn_port: int = 8082
 
     # Redis
-    redis_host: str = Field(default='0.0.0.0', env='REDIS_HOST')
-    redis_port: int = Field(default=6379, env='REDIS_PORT')
+    redis_host: str = '0.0.0.0'
+    redis_port: int = 6379
 
     # Postgres
     db: DataBaseSettings = DataBaseSettings()
     log_sql_queries: bool = False
 
     # JWT
-    authjwt_secret_key: str = Field(default='practicum', env='SECRET_KEY')
-    authjwt_algorithm: str = Field(default='HS256', env='ALGORITHM')
-    authjwt_access_token_expires: int = Field(default=30, env='ACCESS_TOKEN_EXPIRE_MINUTES')
-    authjwt_refresh_token_expires: int = Field(default=1410, env='REFRESH_TOKEN_EXPIRE_MINUTES')
+    secret_key: str = 'practicum'
+    algorithm: str = 'HS256'
+    access_token_expires: int = 30
+    refresh_token_expires: int = 1410
 
-    class Config:
-        env_file = '.env'
-
-
-# Создаем экземпляр класса Settings для хранения настроек
 settings = Settings()
 
 # Применяем настройки логирования
+from logging import config as logging_config
+from app.core.logger import LOGGING
 logging_config.dictConfig(LOGGING)
 
 # Корень проекта
+import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

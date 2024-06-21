@@ -32,9 +32,9 @@ sqlalchemy==2.0.30
 asyncpg==0.29.0
 alembic==1.13.1
 psycopg==3.1.12
-psycopg2-binary==2.9.5F
+psycopg2-binary==2.9.5
 shortuuid==1.0.13
 greenlet==2.0.2
 Werkzeug==3.0.3
 async-fastapi-jwt-auth[asymmetric]
-pydantic-settings==2.1.0
+pydantic-settings==2.3.3
