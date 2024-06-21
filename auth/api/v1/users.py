@@ -1,11 +1,13 @@
 from typing import List
 from fastapi import APIRouter, Depends, Path, HTTPException, Query, status
 
+from auth.schema.tokens import TokenResponse, LoginRequest
 from auth.schema.users import UserResponse, UserCreate
 
 from fastapi import Depends, HTTPException, status
 
 from auth.services.users import UserService, get_user_service
+from fastapi_jwt_auth import AuthJWT
 
 router = APIRouter()
 
@@ -38,12 +40,19 @@ async def register_user(user: UserCreate, service: UserService = Depends(get_use
                         last_name=new_user.last_name)
 
 
-@router.post("/login", response_model=dict)
-async def login_user():
+@router.post("/login", response_model=TokenResponse)
+async def login_user(user: LoginRequest, service: UserService = Depends(get_user_service),
+                     Authorize: AuthJWT = Depends()):
     """
     Вход пользователя в аккаунт
     """
-    pass
+    db_user = await service.get_by_login(user.login)
+    if not db_user or not db_user.check_password(user.password):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid login or password")
+
+    access_token = Authorize.create_access_token(subject=user.login)
+    refresh_token = Authorize.create_refresh_token(subject=user.login)
+    return {"access_token": access_token, "refresh_token": refresh_token}
 
 
 @router.post("/token/refresh", response_model=dict)
