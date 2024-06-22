@@ -1,71 +1,90 @@
 from typing import List
 from fastapi import APIRouter, Depends, Path, HTTPException, Query, status
 from uuid import UUID
+from auth.models.users import Role
+from auth.schema.roles import RoleSchema, RoleResponse, RoleUpdateSchema
+from auth.services.roles import RoleService, get_role_service
 
 router = APIRouter()
 
 
-@router.post("/roles", response_model=dict)
-async def create_role():
+@router.post("/", response_model=dict)
+async def create_role(role: RoleSchema, service: RoleService = Depends(get_role_service)) -> RoleResponse:
     """
     Создание роли
     """
-    pass
+    new_role = await service.create_role(role)
+    return RoleResponse.from_orm(new_role)
 
 
-@router.delete("/roles/{role_id}", response_model=dict)
-async def delete_role(role_id: UUID = Path(..., description="Role ID")):
+@router.delete("/")
+async def delete_role(role_id: UUID = None, role_name: str = None,
+                      service: RoleService = Depends(get_role_service)) -> dict:
     """
-    Удаление роли
+    Удалить роль по ID или имени.
+
+    Параметры:
+    - role_id: UUID (необязательно) - ID роли, которую нужно удалить.
+    - name: str (необязательно) - Имя роли, которую нужно удалить.
+
+    Необходимо указать либо role_id, либо name.
     """
-    pass
+    result = await service.delete_role(role_id, role_name)
+    return result
 
 
-@router.patch("/roles/{role_id}", response_model=dict)
-async def update_role(role_id: UUID = Path(..., description="Role ID")):
+@router.patch("/{role_id}")
+async def update_role(role_id: UUID, data: RoleUpdateSchema,
+                      service: RoleService = Depends(get_role_service)) -> RoleResponse:
     """
-    Изменение роли
+    Обновить роль по ID.
+
+    Параметры:
+    - role_id: UUID - ID роли, которую нужно обновить.
+    - data: RoleUpdateSchema - Данные для обновления.
     """
-    pass
+    updated_role = await service.update_role(role_id, data)
+    return RoleResponse.from_orm(updated_role)
 
 
-@router.get("/roles", response_model=List[dict])
-async def get_roles():
+@router.get("/")
+async def get_roles(service: RoleService = Depends(get_role_service)):
     """
     Просмотр всех ролей
     """
-    pass
-
-
-@router.post("/users/{user_id}/roles/{role_id}", response_model=dict)
-async def assign_role_to_user(user_id: UUID = Path(..., description="User ID"),
-                              role_id: UUID = Path(..., description="Role ID")):
-    """
-    Назначение роли пользователю
-    """
-    pass
-
-
-@router.delete("/users/{user_id}/roles/{role_id}", response_model=dict)
-async def remove_role_from_user(user_id: UUID = Path(..., description="User ID"),
-                                role_id: UUID = Path(..., description="Role ID")):
-    """
-    Отобрать роль у пользователя
-    """
-    pass
-
-
-@router.get("/users/me/permissions", response_model=List[dict])
-async def check_user_permissions():
-    """
-    Проверка наличия прав у пользователя
-    """
-    pass
-
-
-@router.post("/logout/others", response_model=dict)
-async def logout_other_sessions():
-    """
-    Реализация кнопки "Выйти из остальных аккаунтов"
-    """
-    pass
+    roles = await service.get_all_roles()
+    return roles
+#
+#
+# @router.post("/users/{user_id}/roles/{role_id}", response_model=dict)
+# async def assign_role_to_user(user_id: UUID = Path(..., description="User ID"),
+#                               role_id: UUID = Path(..., description="Role ID")):
+#     """
+#     Назначение роли пользователю
+#     """
+#     pass
+#
+#
+# @router.delete("/users/{user_id}/roles/{role_id}", response_model=dict)
+# async def remove_role_from_user(user_id: UUID = Path(..., description="User ID"),
+#                                 role_id: UUID = Path(..., description="Role ID")):
+#     """
+#     Отобрать роль у пользователя
+#     """
+#     pass
+#
+#
+# @router.get("/users/me/permissions", response_model=List[dict])
+# async def check_user_permissions():
+#     """
+#     Проверка наличия прав у пользователя
+#     """
+#     pass
+#
+#
+# @router.post("/logout/others", response_model=dict)
+# async def logout_other_sessions():
+#     """
+#     Реализация кнопки "Выйти из остальных аккаунтов"
+#     """
+#     pass

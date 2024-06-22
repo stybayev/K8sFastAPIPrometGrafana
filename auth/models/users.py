@@ -1,3 +1,5 @@
+from typing import Union, Optional
+
 from sqlalchemy import Column, String, DateTime, Index, ForeignKey, ARRAY
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
@@ -46,7 +48,7 @@ class Role(Base):
     def __init__(self, name: str, description: str = None, permissions: list = None):
         self.name = name
         self.description = description
-        self.permissions = permissions if permissions is not None else []
+        self.permissions = permissions if permissions else None
 
     def __repr__(self):
         return f'<Role {self.name}>'
