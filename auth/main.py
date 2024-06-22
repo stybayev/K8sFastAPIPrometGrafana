@@ -31,5 +31,5 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
-app.include_router(roles.router, prefix="/api/v1/roles", tags=["roles"])
+app.include_router(users.router, prefix="/api/v1/auth/users", tags=["users"])
+app.include_router(roles.router, prefix="/api/v1/auth/roles", tags=["roles"])
