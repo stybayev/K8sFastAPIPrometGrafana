@@ -8,3 +8,4 @@ class JWTSettings(BaseSettings):
     authjwt_algorithm: str = settings.ALGORITHM
     authjwt_access_token_expires: int = settings.ACCESS_TOKEN_EXPIRES
     authjwt_refresh_token_expires: int = settings.REFRESH_TOKEN_EXPIRES
+    authjwt_user_claims: bool = True

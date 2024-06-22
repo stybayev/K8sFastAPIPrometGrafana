@@ -8,6 +8,7 @@ from fastapi import Depends, HTTPException, status
 
 from auth.services.users import UserService, get_user_service
 from fastapi_jwt_auth import AuthJWT
+from fastapi_jwt_auth.exceptions import AuthJWTException
 
 router = APIRouter()
 
@@ -44,10 +45,28 @@ async def register_user(user: UserCreate, service: UserService = Depends(get_use
 async def login_user(user: LoginRequest, service: UserService = Depends(get_user_service),
                      Authorize: AuthJWT = Depends()):
     """
-    Вход пользователя в аккаунт
+    Вход пользователя
     """
     tokens = await service.login(login=user.login, password=user.password, Authorize=Authorize)
     return tokens
+
+
+@router.get("/protected-route", response_model=dict)
+async def protected_route(Authorize: AuthJWT = Depends()):
+    try:
+        Authorize.jwt_required()
+    except AuthJWTException as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+
+    user_claims = Authorize.get_raw_jwt()
+    user_id = user_claims.get("id")
+    roles = user_claims.get("roles", [])
+
+    # Проверка прав пользователя
+    # if "admin" not in roles:
+    #     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permission denied")
+
+    return {"user_id": user_id, "roles": roles}
 
 
 @router.post("/token/refresh", response_model=dict)
