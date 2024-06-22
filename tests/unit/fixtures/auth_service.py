@@ -22,7 +22,7 @@ async def fixture_auth_async_client(auth_override_dependencies):
     """
     Фикстура для создания клиента AsyncClient.
     """
-    async with AsyncClient(app=auth_app, base_url='http://localhost/api/v1') as client:
+    async with AsyncClient(app=auth_app, base_url='http://localhost/api/v1/auth') as client:
         yield client
 
 
@@ -30,7 +30,6 @@ async def fixture_auth_async_client(auth_override_dependencies):
 def fixture_auth_override_dependencies(mock_db_session):
     auth_app.dependency_overrides[get_db_session] = lambda: mock_db_session
     auth_app.dependency_overrides[get_redis] = lambda: redis_client
-
     yield
     auth_app.dependency_overrides = {}
 
