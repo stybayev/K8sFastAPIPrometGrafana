@@ -14,7 +14,7 @@ async def test_register_user_success(auth_async_client: AsyncClient, mock_db_ses
         'last_name': 'User'
     }
 
-    response = await auth_async_client.post('/users', json=user_data)
+    response = await auth_async_client.post('/users/', json=user_data)
     assert response.status_code == 201
 
     data = response.json()
@@ -47,7 +47,7 @@ async def test_register_user_already_registered(auth_async_client: AsyncClient, 
     mock_db_session.commit.side_effect = IntegrityError(statement='', params={}, orig=None)
 
     # Пытаемся зарегистрировать того же пользователя снова
-    response = await auth_async_client.post('/users', json=user_data)
+    response = await auth_async_client.post('/users/', json=user_data)
     assert response.status_code == 400
 
     data = response.json()
