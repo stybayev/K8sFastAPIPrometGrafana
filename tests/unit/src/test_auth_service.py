@@ -1,7 +1,11 @@
+from unittest.mock import patch, AsyncMock, MagicMock
+
 import pytest
 from httpx import AsyncClient
 from sqlalchemy.exc import IntegrityError
 from auth.models.users import User
+from fastapi import status
+from werkzeug.security import generate_password_hash
 
 
 @pytest.mark.anyio

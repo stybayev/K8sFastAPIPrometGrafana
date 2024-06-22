@@ -1,15 +1,14 @@
 import pytest_asyncio
+from unittest.mock import AsyncMock
 
-from redis.asyncio.client import Redis
-
-from tests.unit.settings import test_settings
+from redis.asyncio import Redis
 
 
 @pytest_asyncio.fixture(scope='session')
-async def redis_client():
-    client = Redis(host=test_settings.redis_host,
-                   port=test_settings.redis_port,
-                   decode_responses=True)
+async def mock_redis_client():
+    client = AsyncMock(spec=Redis)
+    client.set = AsyncMock()
+    client.get = AsyncMock()
     yield client
     await client.flushdb()
     await client.close()
