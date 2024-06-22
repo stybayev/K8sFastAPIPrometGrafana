@@ -6,6 +6,7 @@ from typing import Optional
 from fastapi import Depends, HTTPException, status
 from auth.db.postgres import get_db_session
 from auth.models.users import User
+from fastapi_jwt_auth import AuthJWT
 
 
 class UserService:
@@ -33,6 +34,18 @@ class UserService:
         except IntegrityError:
             await self.db_session.rollback()
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Login already registered")
+
+    async def login(self, login: str, password: str, Authorize: AuthJWT) -> dict:
+        """
+        Вход пользователя
+        """
+        db_user = await self.get_by_login(login)
+        if not db_user or not db_user.check_password(password):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid login or password")
+
+        access_token = Authorize.create_access_token(subject=login)
+        refresh_token = Authorize.create_refresh_token(subject=login)
+        return {"access_token": access_token, "refresh_token": refresh_token}
 
 
 @lru_cache()

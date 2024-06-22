@@ -46,13 +46,8 @@ async def login_user(user: LoginRequest, service: UserService = Depends(get_user
     """
     Вход пользователя в аккаунт
     """
-    db_user = await service.get_by_login(user.login)
-    if not db_user or not db_user.check_password(user.password):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid login or password")
-
-    access_token = Authorize.create_access_token(subject=user.login)
-    refresh_token = Authorize.create_refresh_token(subject=user.login)
-    return {"access_token": access_token, "refresh_token": refresh_token}
+    tokens = await service.login(login=user.login, password=user.password, Authorize=Authorize)
+    return tokens
 
 
 @router.post("/token/refresh", response_model=dict)
