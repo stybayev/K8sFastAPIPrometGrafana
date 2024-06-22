@@ -34,6 +34,12 @@ class Settings(BaseSettings):
     db: DataBaseSettings = DataBaseSettings()
     log_sql_queries: bool = False
 
+    # JWT
+    SECRET_KEY: str = Field(default='your_secret_key', env='SECRET_KEY')
+    ALGORITHM: str = Field(default='HS256', env='ALGORITHM')
+    ACCESS_TOKEN_EXPIRES: int = Field(default=30, env='ACCESS_TOKEN_EXPIRES')
+    REFRESH_TOKEN_EXPIRES: int = Field(default=1440, env='REFRESH_TOKEN_EXPIRES')
+
     class Config:
         env_file = '.env'
 

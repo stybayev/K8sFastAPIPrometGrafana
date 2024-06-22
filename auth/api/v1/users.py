@@ -1,8 +1,13 @@
 from typing import List
 from fastapi import APIRouter, Depends, Path, HTTPException, Query, status
 
+from auth.schema.tokens import TokenResponse, LoginRequest
 from auth.schema.users import UserResponse, UserCreate
+
+from fastapi import Depends, HTTPException, status
+
 from auth.services.users import UserService, get_user_service
+from fastapi_jwt_auth import AuthJWT
 
 router = APIRouter()
 
@@ -35,12 +40,14 @@ async def register_user(user: UserCreate, service: UserService = Depends(get_use
                         last_name=new_user.last_name)
 
 
-@router.post("/login", response_model=dict)
-async def login_user():
+@router.post("/login", response_model=TokenResponse)
+async def login_user(user: LoginRequest, service: UserService = Depends(get_user_service),
+                     Authorize: AuthJWT = Depends()):
     """
     Вход пользователя в аккаунт
     """
-    pass
+    tokens = await service.login(login=user.login, password=user.password, Authorize=Authorize)
+    return tokens
 
 
 @router.post("/token/refresh", response_model=dict)
