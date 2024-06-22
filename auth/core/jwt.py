@@ -1,4 +1,3 @@
-from fastapi_jwt_auth import AuthJWT
 from pydantic import BaseSettings
 from auth.core.config import settings
 

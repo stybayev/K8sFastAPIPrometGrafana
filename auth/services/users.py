@@ -47,7 +47,9 @@ class UserService:
         Получение ролей пользователя из БД.
         """
         result = await self.db_session.execute(
-            select(Role.name).join(UserRole, Role.id == UserRole.role_id).where(UserRole.user_id == user_id)
+            select(Role.name).
+            join(UserRole, Role.id == UserRole.role_id).
+            where(UserRole.user_id == user_id)
         )
         roles = result.scalars().all()
         return roles
