@@ -1,10 +1,10 @@
-from typing import Union, Optional
+import uuid
+from datetime import datetime
 
 from sqlalchemy import Column, String, DateTime, Index, ForeignKey, ARRAY
 from sqlalchemy.dialects.postgresql import UUID
-import uuid
-from datetime import datetime
 from werkzeug.security import check_password_hash, generate_password_hash
+
 from auth.db.postgres import Base
 
 

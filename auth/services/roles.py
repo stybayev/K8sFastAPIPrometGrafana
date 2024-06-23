@@ -2,14 +2,14 @@ from functools import lru_cache
 from typing import Optional, List
 
 from fastapi import Depends, HTTPException, status
-from sqlalchemy import delete, or_, update
+from sqlalchemy import delete, or_, update, and_
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from auth.db.postgres import get_db_session
-from auth.models.users import Role
-from auth.schema.roles import RoleSchema, RoleResponse, RoleUpdateSchema
+from auth.models.users import Role, UserRole
+from auth.schema.roles import RoleSchema, RoleResponse, RoleUpdateSchema, UserRoleSchema
 
 
 class RoleService:
@@ -82,6 +82,39 @@ class RoleService:
         if role_name:
             result = await self.db_session.execute(select(Role).where(Role.name == role_name))
         return result.scalar_one_or_none()
+
+    async def assign_role_to_user(self, user_id, role_id) -> UserRoleSchema:
+        """
+        Добавление роли пользователю
+        """
+        result = await self.db_session.execute(
+            select(UserRole).where(and_(UserRole.user_id == user_id, UserRole.role_id == role_id)))
+        user_role_exist = result.scalar_one_or_none()
+
+        if user_role_exist:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="UserRole already exist")
+
+        new_user_role = UserRole(user_id=user_id, role_id=role_id)
+        self.db_session.add(new_user_role)
+        await self.db_session.commit()
+        await self.db_session.refresh(new_user_role)
+        return new_user_role
+
+    async def remove_role_from_user(self, user_id, role_id) -> dict:
+        """
+        Удаление роли пользователя
+        """
+        result = await self.db_session.execute(
+            select(UserRole).where(and_(UserRole.user_id == user_id, UserRole.role_id == role_id)))
+        user_role_exist = result.scalar_one_or_none()
+
+        if not user_role_exist:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="UserRole not found")
+
+        await self.db_session.execute(
+            delete(UserRole).where(and_(UserRole.user_id == user_id, UserRole.role_id == role_id)))
+        await self.db_session.commit()
+        return {"message": f"UserRole '{user_role_exist}' deleted successfully"}
 
 
 @lru_cache()

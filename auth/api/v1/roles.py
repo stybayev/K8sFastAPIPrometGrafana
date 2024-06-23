@@ -1,8 +1,9 @@
 from typing import List
-from fastapi import APIRouter, Depends, Path, HTTPException, Query, status
 from uuid import UUID
-from auth.models.users import Role
-from auth.schema.roles import RoleSchema, RoleResponse, RoleUpdateSchema
+
+from fastapi import APIRouter, Depends, Path
+
+from auth.schema.roles import RoleSchema, RoleResponse, RoleUpdateSchema, UserRoleSchema
 from auth.services.roles import RoleService, get_role_service
 
 router = APIRouter()
@@ -48,40 +49,52 @@ async def update_role(role_id: UUID, data: RoleUpdateSchema,
 
 
 @router.get("/")
-async def get_roles(service: RoleService = Depends(get_role_service)):
+async def get_roles(service: RoleService = Depends(get_role_service)) -> List[RoleResponse]:
     """
     Просмотр всех ролей
     """
     roles = await service.get_all_roles()
     return roles
-#
-#
-# @router.post("/users/{user_id}/roles/{role_id}", response_model=dict)
-# async def assign_role_to_user(user_id: UUID = Path(..., description="User ID"),
-#                               role_id: UUID = Path(..., description="Role ID")):
-#     """
-#     Назначение роли пользователю
-#     """
-#     pass
-#
-#
-# @router.delete("/users/{user_id}/roles/{role_id}", response_model=dict)
-# async def remove_role_from_user(user_id: UUID = Path(..., description="User ID"),
-#                                 role_id: UUID = Path(..., description="Role ID")):
-#     """
-#     Отобрать роль у пользователя
-#     """
-#     pass
-#
-#
+
+
+@router.post("/users/{user_id}/roles/{role_id}")
+async def assign_role_to_user(user_id: UUID = Path(..., description="User ID"),
+                              role_id: UUID = Path(..., description="Role ID"),
+                              service: RoleService = Depends(get_role_service)) -> UserRoleSchema:
+    """
+    Назначение роли пользователю.
+
+    Параметры:
+    - user_id: UUID - ID пользователя, которому добавляем.
+    - role_id: UUID - ID роли, которую нужно добавить.
+    """
+    user_role = await service.assign_role_to_user(user_id, role_id)
+    return UserRoleSchema.from_orm(user_role)
+
+
+@router.delete("/users/{user_id}/roles/{role_id}")
+async def remove_role_from_user(user_id: UUID = Path(..., description="User ID"),
+                                role_id: UUID = Path(..., description="Role ID"),
+                                service: RoleService = Depends(get_role_service)) -> dict:
+    """
+    Удаление роли пользователя.
+
+    Параметры:
+    - user_id: UUID - ID пользователя, которому удаляем.
+    - role_id: UUID - ID роли, которую нужно удалить.
+    """
+    result = await service.remove_role_from_user(user_id, role_id)
+    return result
+
 # @router.get("/users/me/permissions", response_model=List[dict])
-# async def check_user_permissions():
+# async def check_user_permissions(service: RoleService = Depends(get_role_service)):
 #     """
 #     Проверка наличия прав у пользователя
 #     """
-#     pass
-#
-#
+#     result = await service.remove_role_from_user(user_id, role_id)
+#     return result
+
+
 # @router.post("/logout/others", response_model=dict)
 # async def logout_other_sessions():
 #     """
