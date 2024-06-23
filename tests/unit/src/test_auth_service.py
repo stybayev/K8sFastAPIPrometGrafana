@@ -114,13 +114,13 @@ async def test_login_user_invalid_credentials(auth_async_client: AsyncClient):
 @pytest.mark.anyio
 async def test_update_user_credentials_success(auth_async_client: AsyncClient, existing_user: User):
     update_data = {
-        "login": "new_login",
-        "password": "new_password"
+        'login': 'new_login',
+        'password': 'new_password'
     }
 
     updated_user = User(
-        login=update_data["login"],
-        password=generate_password_hash(update_data["password"]),
+        login=update_data['login'],
+        password=generate_password_hash(update_data['password']),
         first_name=existing_user.first_name,
         last_name=existing_user.last_name
     )
@@ -144,8 +144,8 @@ async def test_update_user_credentials_success(auth_async_client: AsyncClient, e
 @pytest.mark.anyio
 async def test_update_user_credentials_unauthorized(auth_async_client: AsyncClient):
     update_data = {
-        "login": "new_login",
-        "password": "new_password"
+        'login': 'new_login',
+        'password': 'new_password'
     }
 
     response = await auth_async_client.patch('/users/update-credentials', json=update_data)

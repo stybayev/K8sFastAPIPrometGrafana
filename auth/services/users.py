@@ -41,7 +41,7 @@ class UserService:
             return new_user
         except IntegrityError:
             await self.db_session.rollback()
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Login already registered")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Login already registered')
 
     async def get_user_roles(self, user_id: uuid.UUID) -> List[str]:
         """
@@ -61,17 +61,17 @@ class UserService:
         """
         db_user = await self.get_by_login(login)
         if not db_user or not db_user.check_password(password):
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid login or password")
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid login or password')
 
         roles = await self.get_user_roles(db_user.id)
-        user_claims = {"id": str(db_user.id), "roles": roles}
+        user_claims = {'id': str(db_user.id), 'roles': roles}
         access_token = Authorize.create_access_token(subject=str(db_user.id), user_claims=user_claims)
         refresh_token = Authorize.create_refresh_token(subject=str(db_user.id))
 
-        await self.redis.set(f"access_token:{access_token}", str(db_user.id), ex=settings.ACCESS_TOKEN_EXPIRES * 60)
-        await self.redis.set(f"refresh_token:{refresh_token}", str(db_user.id), ex=settings.REFRESH_TOKEN_EXPIRES * 60)
+        await self.redis.set(f'access_token:{access_token}', str(db_user.id), ex=settings.ACCESS_TOKEN_EXPIRES * 60)
+        await self.redis.set(f'refresh_token:{refresh_token}', str(db_user.id), ex=settings.REFRESH_TOKEN_EXPIRES * 60)
 
-        return {"access_token": access_token, "refresh_token": refresh_token}
+        return {'access_token': access_token, 'refresh_token': refresh_token}
 
     async def update_user_credentials(self, user_id: uuid.UUID, login: Optional[str] = None,
                                       password: Optional[str] = None) -> User:
@@ -80,7 +80,7 @@ class UserService:
         """
         user = await self.db_session.get(User, user_id)
         if not user:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
 
         if login:
             user.login = login
@@ -92,7 +92,7 @@ class UserService:
             await self.db_session.refresh(user)
         except IntegrityError:
             await self.db_session.rollback()
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Login already registered")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Login already registered')
 
         return user
 
