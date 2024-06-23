@@ -157,9 +157,9 @@ class UserService:
             expires_time=datetime.timedelta(minutes=settings.REFRESH_TOKEN_EXPIRES)
         )
         # проверяем, чтобы refresh токена не было в списках invalid
-        check_invalid = await self.redis.get(f'invalid_token:{refresh_token}')
-        if check_invalid:
-            return await self.generate_tokens(authorize=authorize, claims=claims, user_id=user_id)
+        # check_invalid = await self.redis.get(f'invalid_token:{refresh_token}')
+        # if check_invalid:
+        #     return await self.generate_tokens(authorize=authorize, claims=claims, user_id=user_id)
         await self.redis.set(
             f'access_token:{access_token}',
             str(user_id),
