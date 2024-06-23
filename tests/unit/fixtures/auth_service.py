@@ -26,10 +26,22 @@ async def fixture_auth_async_client(auth_override_dependencies):
         yield client
 
 
+from auth.core.jwt import JWTSettings
+from fastapi_jwt_auth import AuthJWT
+
+
+@pytest_asyncio.fixture(scope='session')
+def authjwt():
+    AuthJWT.load_config(lambda: JWTSettings())
+    return AuthJWT()
+
+
 @pytest_asyncio.fixture(name='auth_override_dependencies', scope='session')
-def fixture_auth_override_dependencies(mock_db_session):
+def fixture_auth_override_dependencies(mock_db_session, mock_redis_client, authjwt):
     auth_app.dependency_overrides[get_db_session] = lambda: mock_db_session
     auth_app.dependency_overrides[get_redis] = lambda: mock_redis_client
+    auth_app.dependency_overrides[AuthJWT] = lambda: authjwt
+
     yield
     auth_app.dependency_overrides = {}
 
