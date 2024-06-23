@@ -25,11 +25,12 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title=settings.project_name,
-    docs_url="/api/auth/openapi",
-    openapi_url="/api/auth/openapi.json",
+    docs_url='/api/auth/openapi',
+    openapi_url='/api/auth/openapi.json',
     default_response_class=ORJSONResponse,
-    lifespan=lifespan
+    lifespan=lifespan,
+    swagger_ui_oauth2_redirect_url='/api/v1/auth/users/login'
 )
 
-app.include_router(users.router, prefix="/api/v1/auth/users", tags=["users"])
-app.include_router(roles.router, prefix="/api/v1/auth/roles", tags=["roles"])
+app.include_router(users.router, prefix='/api/v1/auth/users', tags=['users'])
+app.include_router(roles.router, prefix='/api/v1/auth/roles', tags=['roles'])

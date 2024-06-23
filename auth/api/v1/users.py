@@ -1,5 +1,5 @@
 import uuid
-from typing import List
+from typing import List, Annotated
 from fastapi import APIRouter, Depends, Path, HTTPException, Query, status
 
 from auth.schema.tokens import TokenResponse, LoginRequest
@@ -79,7 +79,9 @@ async def logout_user():
     pass
 
 
-@router.patch("/update-credentials", response_model=UserResponse)
+@router.patch("/update-credentials",
+              response_model=UserResponse,
+              )
 async def update_user_credentials(
         user_credentials: UpdateUserCredentialsRequest,
         service: UserService = Depends(get_user_service),
