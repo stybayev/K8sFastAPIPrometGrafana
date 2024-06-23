@@ -1,6 +1,6 @@
 import uuid
 from typing import List, Annotated
-from fastapi import APIRouter, Depends, Path, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Path, HTTPException, Query, status, Header
 
 from auth.schema.tokens import TokenResponse, LoginRequest
 from auth.schema.users import UserResponse, UserCreate, UpdateUserCredentialsRequest
@@ -10,6 +10,7 @@ from fastapi import Depends, HTTPException, status
 from auth.services.users import UserService, get_user_service
 from fastapi_jwt_auth import AuthJWT
 from fastapi_jwt_auth.exceptions import AuthJWTException
+from auth.utils.dc_objects import Token
 
 router = APIRouter()
 
@@ -63,12 +64,16 @@ async def login_user(user: LoginRequest, service: UserService = Depends(get_user
     return tokens
 
 
-@router.post("/token/refresh", response_model=dict)
-async def refresh_access_token():
+@router.post("/token/refresh", response_model=Token)
+async def refresh_access_token(
+        authorization: str = Header(None),
+        service: UserService = Depends(get_user_service),
+        authorize: AuthJWT = Depends()
+):
     """
     Обновление access-токена
     """
-    pass
+    return await service.refresh_access_token(authorize, authorization)
 
 
 @router.post("/logout", response_model=dict)
