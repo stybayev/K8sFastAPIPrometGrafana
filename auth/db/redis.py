@@ -1,8 +1,9 @@
 from redis.asyncio import Redis
 
-redis: Redis | None = None
+connection: Redis | None = None
 
 
-# Функция понадобится при внедрении зависимостей
 async def get_redis() -> Redis:
-    return redis
+    if not connection:
+        raise ValueError("Redis connection is not initialized")
+    return connection

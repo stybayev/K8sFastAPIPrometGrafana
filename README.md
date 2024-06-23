@@ -116,3 +116,8 @@ http://0.0.0.0:8081/api/files/openapi
 
    ```bash
    docker-compose down -v
+   
+5. **Добавление суперпользователя в систему**
+   Для добавления суперпользователя необходимо ввести следующую команду (admin - логин пользователя, password - пароль пользователя:
+   ```bash
+   python auth/core/su.py admin password

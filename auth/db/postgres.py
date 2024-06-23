@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy import text
-from file_api.core.config import settings
+from auth.core.config import settings
 
 Base = declarative_base()
 
@@ -17,7 +17,6 @@ async def create_database() -> None:
         print('Creating tables...')
         from auth.models.users import User, Role, UserRole, LoginHistory
         await conn.run_sync(Base.metadata.create_all)
-
 
 
 async def purge_database() -> None:
