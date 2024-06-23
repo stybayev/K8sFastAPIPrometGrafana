@@ -4,5 +4,5 @@ pytest_plugins = [
     'tests.unit.fixtures.mock_db',
     'tests.unit.fixtures.file_service',
     'tests.unit.fixtures.auth_service',
-
+    'tests.unit.fixtures.mock_redis',
 ]
