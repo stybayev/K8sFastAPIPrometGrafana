@@ -15,8 +15,8 @@ async def lifespan(app: FastAPI):
     AuthJWT.load_config(lambda: JWTSettings())
     redis.connection = Redis(host=settings.redis_host, port=settings.redis_port)
 
-    # TODO: создание БД надо будет переделать через alembic
-    await create_database()
+    # TODO: создание БД реализован через alembic, но строку оставлю пака на всякий пожарный
+    # await create_database()
 
     yield
 
@@ -25,11 +25,12 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title=settings.project_name,
-    docs_url="/api/auth/openapi",
-    openapi_url="/api/auth/openapi.json",
+    docs_url='/api/auth/openapi',
+    openapi_url='/api/auth/openapi.json',
     default_response_class=ORJSONResponse,
-    lifespan=lifespan
+    lifespan=lifespan,
+    swagger_ui_oauth2_redirect_url='/api/v1/auth/users/login'
 )
 
-app.include_router(users.router, prefix="/api/v1/auth/users", tags=["users"])
-app.include_router(roles.router, prefix="/api/v1/auth/roles", tags=["roles"])
+app.include_router(users.router, prefix='/api/v1/auth/users', tags=['users'])
+app.include_router(roles.router, prefix='/api/v1/auth/roles', tags=['roles'])
