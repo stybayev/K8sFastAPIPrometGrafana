@@ -3,7 +3,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Path
 
-from auth.schema.roles import RoleSchema, RoleResponse, RoleUpdateSchema, UserRoleSchema
+from auth.schema.roles import RoleSchema, RoleResponse, RoleUpdateSchema, UserRoleSchema, UserPermissionsSchema
 from auth.services.roles import RoleService, get_role_service
 
 router = APIRouter()
@@ -86,14 +86,15 @@ async def remove_role_from_user(user_id: UUID = Path(..., description="User ID")
     result = await service.remove_role_from_user(user_id, role_id)
     return result
 
-# @router.get("/users/me/permissions", response_model=List[dict])
-# async def check_user_permissions(service: RoleService = Depends(get_role_service)):
-#     """
-#     Проверка наличия прав у пользователя
-#     """
-#     result = await service.remove_role_from_user(user_id, role_id)
-#     return result
 
+@router.get("/users/{user_id}/permissions", response_model=UserPermissionsSchema)
+async def check_user_permissions(user_id: UUID = Path(..., description="User ID"),
+                                 service: RoleService = Depends(get_role_service)):
+    """
+    Проверка наличия прав у пользователя
+    """
+    result = await service.get_user_permissions(user_id)
+    return result
 
 # @router.post("/logout/others", response_model=dict)
 # async def logout_other_sessions():

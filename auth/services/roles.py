@@ -6,10 +6,11 @@ from sqlalchemy import delete, or_, update, and_
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import selectinload
 
 from auth.db.postgres import get_db_session
-from auth.models.users import Role, UserRole
-from auth.schema.roles import RoleSchema, RoleResponse, RoleUpdateSchema, UserRoleSchema
+from auth.models.users import Role, UserRole, User
+from auth.schema.roles import RoleSchema, RoleResponse, RoleUpdateSchema, UserRoleSchema, UserPermissionsSchema
 
 
 class RoleService:
@@ -116,6 +117,20 @@ class RoleService:
         await self.db_session.commit()
         return {"message": f"UserRole '{user_role_exist}' deleted successfully"}
 
+    async def get_user_permissions(self, user_id: UUID) -> UserPermissionsSchema:
+        result = await self.db_session.execute(
+            select(User).where(User.id == user_id).options(selectinload(User.roles))
+        )
+        user = result.scalar_one_or_none()
+
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+        user_permissions = []
+        for role in user.roles:
+            user_permissions += role.permissions
+
+        return UserPermissionsSchema(user_id=user_id, permissions=user_permissions)
 
 @lru_cache()
 def get_role_service(db_session: AsyncSession = Depends(get_db_session)) -> RoleService:

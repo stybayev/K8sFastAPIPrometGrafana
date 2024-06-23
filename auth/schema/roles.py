@@ -17,12 +17,16 @@ class RoleUpdateSchema(BaseModel):
 
 
 class UserRoleSchema(BaseModel):
-    id: UUID
     user_id: UUID
     role_id: UUID
 
     class Config:
         orm_mode = True
+
+
+class UserPermissionsSchema(BaseModel):
+    user_id: UUID
+    permissions: List[str]
 
 
 class RoleResponse(RoleSchema):

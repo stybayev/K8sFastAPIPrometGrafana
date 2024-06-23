@@ -3,9 +3,21 @@ from datetime import datetime
 
 from sqlalchemy import Column, String, DateTime, Index, ForeignKey, ARRAY
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from auth.db.postgres import Base
+
+
+class UserRole(Base):
+    __tablename__ = 'user_roles'
+    __table_args__ = {'schema': 'auth'}
+
+    user_id = Column(UUID(as_uuid=True), ForeignKey('auth.users.id'), primary_key=True)
+    role_id = Column(UUID(as_uuid=True), ForeignKey('auth.roles.id'), primary_key=True)
+
+    def __repr__(self):
+        return f'<UserRole user_id={self.user_id}, role_id={self.role_id}>'
 
 
 class User(Base):
@@ -18,6 +30,8 @@ class User(Base):
     first_name = Column(String(50), nullable=True)
     last_name = Column(String(50), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    roles = relationship('Role', secondary='auth.user_roles', back_populates='users')
 
     Index('idx_user_login', 'login', unique=True)
 
@@ -43,6 +57,8 @@ class Role(Base):
     description = Column(String(255), nullable=True)
     permissions = Column(ARRAY(String), nullable=True)
 
+    users = relationship('User', secondary='auth.user_roles', back_populates='roles')
+
     Index('idx_role_name', 'name', unique=True)
 
     def __init__(self, name: str, description: str = None, permissions: list = None):
@@ -52,24 +68,6 @@ class Role(Base):
 
     def __repr__(self):
         return f'<Role {self.name}>'
-
-
-class UserRole(Base):
-    __tablename__ = 'user_roles'
-    __table_args__ = {'schema': 'auth'}
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True)
-    user_id = Column(UUID(as_uuid=True), ForeignKey('auth.users.id'), nullable=False)
-    role_id = Column(UUID(as_uuid=True), ForeignKey('auth.roles.id'), nullable=False)
-
-    Index('idx_user_role', 'user_id', 'role_id', unique=True)
-
-    def __init__(self, user_id: uuid.UUID, role_id: uuid.UUID):
-        self.user_id = user_id
-        self.role_id = role_id
-
-    def __repr__(self):
-        return f'<UserRole user_id={self.user_id}, role_id={self.role_id}>'
 
 
 class LoginHistory(Base):
