@@ -8,6 +8,8 @@ from auth.models.users import User
 from werkzeug.security import generate_password_hash
 
 from auth.services.users import UserService
+from fastapi import status
+from fastapi_jwt_auth import AuthJWT
 
 
 @pytest.mark.anyio
@@ -107,3 +109,45 @@ async def test_login_user_invalid_credentials(auth_async_client: AsyncClient):
 
         data = response.json()
         assert data['detail'] == 'Invalid login or password'
+
+
+@pytest.mark.anyio
+async def test_update_user_credentials_success(auth_async_client: AsyncClient, existing_user: User):
+    update_data = {
+        "login": "new_login",
+        "password": "new_password"
+    }
+
+    updated_user = User(
+        login=update_data["login"],
+        password=generate_password_hash(update_data["password"]),
+        first_name=existing_user.first_name,
+        last_name=existing_user.last_name
+    )
+    # Устанавливаем id после создания объекта
+    updated_user.id = existing_user.id
+
+    # Мокаем методы AuthJWT и UserService
+    with (patch.object(AuthJWT, 'jwt_required', return_value=None),
+          patch.object(AuthJWT, 'get_jwt_subject', return_value=str(existing_user.id)),
+          patch.object(UserService, 'update_user_credentials', return_value=updated_user)):
+        response = await auth_async_client.patch('/users/update-credentials', json=update_data)
+        assert response.status_code == 200
+
+        data = response.json()
+        assert data['id'] == str(existing_user.id)
+        assert data['login'] == update_data["login"]
+        assert data['first_name'] == existing_user.first_name
+        assert data['last_name'] == existing_user.last_name
+
+
+@pytest.mark.anyio
+async def test_update_user_credentials_unauthorized(auth_async_client: AsyncClient):
+    update_data = {
+        "login": "new_login",
+        "password": "new_password"
+    }
+
+    response = await auth_async_client.patch('/users/update-credentials', json=update_data)
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
