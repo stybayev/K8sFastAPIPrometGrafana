@@ -22,3 +22,8 @@ class UserResponse(UserBase):
 class UserLogin(BaseModel):
     login: str
     password: str
+
+
+class UpdateUserCredentialsRequest(BaseModel):
+    login: str
+    password: str

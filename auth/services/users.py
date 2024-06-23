@@ -13,6 +13,7 @@ from auth.db.redis import get_redis
 from auth.models.users import User, UserRole, Role
 from fastapi_jwt_auth import AuthJWT
 from redis.asyncio import Redis
+from werkzeug.security import generate_password_hash
 
 
 class UserService:
@@ -71,6 +72,29 @@ class UserService:
         await self.redis.set(f"refresh_token:{refresh_token}", str(db_user.id), ex=settings.REFRESH_TOKEN_EXPIRES * 60)
 
         return {"access_token": access_token, "refresh_token": refresh_token}
+
+    async def update_user_credentials(self, user_id: uuid.UUID, login: Optional[str] = None,
+                                      password: Optional[str] = None) -> User:
+        """
+        Обновление логина или пароля пользователя
+        """
+        user = await self.db_session.get(User, user_id)
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+        if login:
+            user.login = login
+        if password:
+            user.password = generate_password_hash(password)
+
+        try:
+            await self.db_session.commit()
+            await self.db_session.refresh(user)
+        except IntegrityError:
+            await self.db_session.rollback()
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Login already registered")
+
+        return user
 
 
 @lru_cache()
