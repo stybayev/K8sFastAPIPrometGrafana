@@ -7,6 +7,8 @@ from auth.models.users import User
 from auth.services.users import UserService
 from auth.db.postgres import get_db_session
 from tests.unit.fixtures.mock_redis import mock_redis_client
+from tests.unit.settings import TestJWTSettings
+from fastapi_jwt_auth import AuthJWT
 
 
 @pytest_asyncio.fixture(name='user_service')
@@ -27,12 +29,11 @@ async def fixture_auth_async_client(auth_override_dependencies):
 
 
 from auth.core.jwt import JWTSettings
-from fastapi_jwt_auth import AuthJWT
 
 
 @pytest_asyncio.fixture(scope='session')
 def authjwt():
-    AuthJWT.load_config(lambda: JWTSettings())
+    AuthJWT.load_config(lambda: TestJWTSettings())
     return AuthJWT()
 
 

@@ -66,9 +66,7 @@ async def test_register_user_already_registered(auth_async_client: AsyncClient, 
 
 
 @pytest.mark.anyio
-async def test_login_user_success(auth_async_client: AsyncClient,
-                                  mock_db_session, auth_override_dependencies,
-                                  authjwt):
+async def test_login_user_success(auth_async_client: AsyncClient):
     user_data = {
         'login': 'testuser',
         'password': 'testpassword'
@@ -83,9 +81,9 @@ async def test_login_user_success(auth_async_client: AsyncClient,
     )
 
     # Мокаем методы UserService
-    with patch.object(UserService, 'get_by_login', return_value=mock_user), \
-            patch.object(User, 'check_password', return_value=True), \
-            patch.object(UserService, 'get_user_roles', return_value=['user']):
+    with (patch.object(UserService, 'get_by_login', return_value=mock_user),
+          patch.object(User, 'check_password', return_value=True),
+          patch.object(UserService, 'get_user_roles', return_value=['user'])):
         response = await auth_async_client.post('/users/login', json=user_data)
 
         assert response.status_code == 200
@@ -95,4 +93,19 @@ async def test_login_user_success(auth_async_client: AsyncClient,
         assert 'refresh_token' in data
 
 
+@pytest.mark.anyio
+async def test_login_user_invalid_credentials(auth_async_client: AsyncClient):
+    user_data = {
+        'login': 'wronguser',
+        'password': 'wrongpassword'
+    }
 
+    # Мокаем методы UserService для возврата None при попытке найти пользователя по логину
+    with (patch.object(UserService, 'get_by_login', return_value=None),
+          patch.object(User, 'check_password', return_value=False)):
+        response = await auth_async_client.post('/users/login', json=user_data)
+
+        assert response.status_code == 401
+
+        data = response.json()
+        assert data['detail'] == 'Invalid login or password'
