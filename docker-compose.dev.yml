@@ -30,6 +30,16 @@ services:
       - db
       - redis
 
+  api-migrations:
+    build: ./auth
+    <<: *app
+    volumes:
+      - .:/auth
+    depends_on:
+      - db
+      - redis
+    command: alembic upgrade head
+
   django_admin:
     build: django_admin
     image: app-django-admin:dev
