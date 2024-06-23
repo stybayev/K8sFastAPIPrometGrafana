@@ -1,13 +1,11 @@
-import uuid
-from unittest.mock import patch, AsyncMock, MagicMock
+from unittest.mock import patch
 
 import pytest
 from httpx import AsyncClient
 from sqlalchemy.exc import IntegrityError
 from auth.models.users import User
-from fastapi import status
+
 from werkzeug.security import generate_password_hash
-from redis.asyncio import Redis
 
 from auth.services.users import UserService
 

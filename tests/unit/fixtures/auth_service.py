@@ -6,7 +6,6 @@ from auth.main import app as auth_app
 from auth.models.users import User
 from auth.services.users import UserService
 from auth.db.postgres import get_db_session
-from tests.unit.fixtures.mock_redis import mock_redis_client
 from tests.unit.settings import TestJWTSettings
 from fastapi_jwt_auth import AuthJWT
 
