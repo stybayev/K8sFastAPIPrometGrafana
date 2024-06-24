@@ -1,29 +1,29 @@
-from typing import List
 from uuid import UUID
-
-from fastapi import APIRouter, Depends, Path
-from fastapi_jwt_auth import AuthJWT
-
-from auth.schema.roles import RoleSchema, RoleResponse, RoleUpdateSchema, UserRoleSchema, UserPermissionsSchema
+from auth.schema.roles import RoleSchema, RoleResponse, RoleUpdateSchema, AssignRoleResponse
 from auth.services.roles import RoleService, get_role_service
+import uuid
+from typing import List
+from fastapi import APIRouter, Depends, Path, HTTPException, Query, status
+from fastapi import Depends, HTTPException, status
+
+from fastapi_jwt_auth import AuthJWT
+from fastapi_jwt_auth.exceptions import AuthJWTException
 
 router = APIRouter()
 
 
 @router.post("/", response_model=dict)
-async def create_role(role: RoleSchema, service: RoleService = Depends(get_role_service),
-                      Authorize: AuthJWT = Depends()) -> RoleResponse:
+async def create_role(role: RoleSchema, service: RoleService = Depends(get_role_service)) -> RoleResponse:
     """
     Создание роли
     """
-    new_role = await service.create_role(role, Authorize=Authorize)
+    new_role = await service.create_role(role)
     return RoleResponse.from_orm(new_role)
 
 
 @router.delete("/")
 async def delete_role(role_id: UUID = None, role_name: str = None,
-                      service: RoleService = Depends(get_role_service),
-                      Authorize: AuthJWT = Depends()) -> dict:
+                      service: RoleService = Depends(get_role_service)) -> dict:
     """
     Удалить роль по ID или имени.
 
@@ -33,14 +33,13 @@ async def delete_role(role_id: UUID = None, role_name: str = None,
 
     Необходимо указать либо role_id, либо name.
     """
-    result = await service.delete_role(role_id=role_id, role_name=role_name, Authorize=Authorize)
+    result = await service.delete_role(role_id, role_name)
     return result
 
 
 @router.patch("/{role_id}")
 async def update_role(role_id: UUID, data: RoleUpdateSchema,
-                      service: RoleService = Depends(get_role_service),
-                      Authorize: AuthJWT = Depends()) -> RoleResponse:
+                      service: RoleService = Depends(get_role_service)) -> RoleResponse:
     """
     Обновить роль по ID.
 
@@ -48,12 +47,12 @@ async def update_role(role_id: UUID, data: RoleUpdateSchema,
     - role_id: UUID - ID роли, которую нужно обновить.
     - data: RoleUpdateSchema - Данные для обновления.
     """
-    updated_role = await service.update_role(role_id, data, Authorize=Authorize)
+    updated_role = await service.update_role(role_id, data)
     return RoleResponse.from_orm(updated_role)
 
 
 @router.get("/")
-async def get_roles(service: RoleService = Depends(get_role_service)) -> List[RoleResponse]:
+async def get_roles(service: RoleService = Depends(get_role_service)):
     """
     Просмотр всех ролей
     """
@@ -61,51 +60,57 @@ async def get_roles(service: RoleService = Depends(get_role_service)) -> List[Ro
     return roles
 
 
-@router.post("/users/{user_id}/roles/{role_id}")
-async def assign_role_to_user(user_id: UUID = Path(..., description="User ID"),
-                              role_id: UUID = Path(..., description="Role ID"),
-                              service: RoleService = Depends(get_role_service),
-                              Authorize: AuthJWT = Depends()) -> UserRoleSchema:
+@router.post("/users/{user_id}/roles/{role_id}", response_model=AssignRoleResponse)
+async def assign_role_to_user(
+        user_id: UUID = Path(..., description="User ID"),
+        role_id: UUID = Path(..., description="Role ID"),
+        service: RoleService = Depends(get_role_service),
+        Authorize: AuthJWT = Depends()
+):
     """
-    Назначение роли пользователю.
+    Назначение роли пользователю
 
-    Параметры:
-    - user_id: UUID - ID пользователя, которому добавляем.
-    - role_id: UUID - ID роли, которую нужно добавить.
+    Этот эндпоинт позволяет назначить роль существующему пользователю в системе.
+
+    ### Параметры:
+    - **user_id**: UUID - Идентификатор пользователя.
+    - **role_id**: UUID - Идентификатор роли.
+
+    ### Возвращает:
+    - **user_id**: UUID - Идентификатор пользователя.
+    - **role_id**: UUID - Идентификатор роли.
+    - **message**: str - Сообщение о результате операции.
+
+    ### Исключения:
+    - **404 Not Found**: Пользователь или роль не найдены.
+    - **400 Bad Request**: Роль уже назначена пользователю.
     """
-    user_role = await service.assign_role_to_user(user_id, role_id, Authorize=Authorize)
-    return UserRoleSchema.from_orm(user_role)
+    await service.check_admin_permissions(Authorize)
+
+    result = await service.assign_role_to_user(user_id, role_id)
+    return AssignRoleResponse(user_id=user_id, role_id=role_id, message=result['message'])
 
 
-@router.delete("/users/{user_id}/roles/{role_id}")
+@router.delete("/users/{user_id}/roles/{role_id}", response_model=dict)
 async def remove_role_from_user(user_id: UUID = Path(..., description="User ID"),
-                                role_id: UUID = Path(..., description="Role ID"),
-                                service: RoleService = Depends(get_role_service),
-                                Authorize: AuthJWT = Depends()) -> dict:
+                                role_id: UUID = Path(..., description="Role ID")):
     """
-    Удаление роли пользователя.
-
-    Параметры:
-    - user_id: UUID - ID пользователя, которому удаляем.
-    - role_id: UUID - ID роли, которую нужно удалить.
+    Отобрать роль у пользователя
     """
-    result = await service.remove_role_from_user(user_id, role_id, Authorize=Authorize)
-    return result
+    pass
 
 
-@router.get("/users/{user_id}/permissions", response_model=UserPermissionsSchema)
-async def check_user_permissions(user_id: UUID = Path(..., description="User ID"),
-                                 service: RoleService = Depends(get_role_service)):
+@router.get("/users/me/permissions", response_model=List[dict])
+async def check_user_permissions():
     """
     Проверка наличия прав у пользователя
     """
-    result = await service.get_user_permissions(user_id)
-    return result
+    pass
 
-# @router.post("/logout/others", response_model=dict)
-# async def logout_other_sessions():
-#     """
-#     Реализация кнопки "Выйти из остальных аккаунтов"
-#     """
-#     pass
 
+@router.post("/logout/others", response_model=dict)
+async def logout_other_sessions():
+    """
+    Реализация кнопки "Выйти из остальных аккаунтов"
+    """
+    pass

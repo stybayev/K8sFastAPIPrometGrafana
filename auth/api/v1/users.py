@@ -1,5 +1,5 @@
 import uuid
-from typing import List, Annotated
+from typing import List
 from fastapi import APIRouter, Depends, Path, HTTPException, Query, status
 
 from auth.schema.tokens import TokenResponse, LoginRequest
