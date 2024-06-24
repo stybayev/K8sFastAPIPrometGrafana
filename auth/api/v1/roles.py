@@ -94,11 +94,11 @@ async def assign_role_to_user(
     current_user_roles = Authorize.get_raw_jwt().get('roles', [])
 
     # Проверяем, что текущий пользователь имеет права администратора
-    if "admin" not in current_user_roles:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Operation not permitted")
+    if 'admin' not in current_user_roles:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Operation not permitted')
 
     result = await service.assign_role_to_user(user_id, role_id)
-    return AssignRoleResponse(user_id=user_id, role_id=role_id, message=result["message"])
+    return AssignRoleResponse(user_id=user_id, role_id=role_id, message=result['message'])
 
 
 @router.delete("/users/{user_id}/roles/{role_id}", response_model=dict)
