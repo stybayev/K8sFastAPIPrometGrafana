@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import Optional, List
+from typing import List
 
 from fastapi import Depends, HTTPException, status
 from sqlalchemy import delete, or_, update
@@ -11,6 +11,8 @@ from auth.db.postgres import get_db_session
 from auth.models.users import Role, UserRole, User
 from auth.schema.roles import RoleSchema, RoleResponse, RoleUpdateSchema
 import uuid
+from fastapi_jwt_auth import AuthJWT
+from fastapi_jwt_auth.exceptions import AuthJWTException
 
 
 class RoleService:
@@ -111,6 +113,20 @@ class RoleService:
         self.db_session.add(user_role)
         await self.db_session.commit()
         return {"message": f"Role '{role.name}' assigned to user '{user.login}' successfully"}
+
+    async def check_admin_permissions(self, Authorize: AuthJWT):
+        """
+        Проверка, что текущий пользователь имеет права администратора
+        """
+        try:
+            Authorize.jwt_required()
+        except AuthJWTException as e:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+
+        current_user_roles = Authorize.get_raw_jwt().get('roles', [])
+
+        if 'admin' not in current_user_roles:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Operation not permitted')
 
 
 @lru_cache()

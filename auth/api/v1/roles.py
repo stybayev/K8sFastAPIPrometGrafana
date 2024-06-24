@@ -85,17 +85,7 @@ async def assign_role_to_user(
     - **404 Not Found**: Пользователь или роль не найдены.
     - **400 Bad Request**: Роль уже назначена пользователю.
     """
-    try:
-        Authorize.jwt_required()
-    except AuthJWTException as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
-
-    # Получаем роли текущего пользователя из токена
-    current_user_roles = Authorize.get_raw_jwt().get('roles', [])
-
-    # Проверяем, что текущий пользователь имеет права администратора
-    if 'admin' not in current_user_roles:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Operation not permitted')
+    await service.check_admin_permissions(Authorize)
 
     result = await service.assign_role_to_user(user_id, role_id)
     return AssignRoleResponse(user_id=user_id, role_id=role_id, message=result['message'])
