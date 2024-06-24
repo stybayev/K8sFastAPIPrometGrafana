@@ -35,3 +35,9 @@ class RoleResponse(RoleSchema):
 
     class Config:
         orm_mode = True
+
+
+class AssignRoleResponse(BaseModel):
+    user_id: UUID
+    role_id: UUID
+    message: str
