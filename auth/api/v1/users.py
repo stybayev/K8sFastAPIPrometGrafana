@@ -69,7 +69,15 @@ async def refresh_access_token(
         authorize: AuthJWT = Depends()
 ):
     """
-    Обновление access-токена
+    ## Обновление Access токена
+
+    Этот эндпоинт позволяет обновить Access токен пользователя используя его Refresh токен.
+    При этом старый Refresh токен добавляется в невалидные и пользователю выдается новая
+    пара Access, Refresh токенов
+
+    ### Возвращает:
+      - `access-token`: Access токен.
+      - `refresh-token`: Refresh токен.
     """
     return await service.refresh_access_token(authorize)
 
