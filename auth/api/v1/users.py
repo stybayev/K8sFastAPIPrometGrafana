@@ -10,7 +10,6 @@ from fastapi import Depends, HTTPException, status
 from auth.services.users import UserService, get_user_service
 from fastapi_jwt_auth import AuthJWT
 from fastapi_jwt_auth.exceptions import AuthJWTException
-from auth.utils.dc_objects import Token
 
 router = APIRouter()
 
@@ -64,16 +63,15 @@ async def login_user(user: LoginRequest, service: UserService = Depends(get_user
     return tokens
 
 
-@router.post("/token/refresh", response_model=Token)
+@router.post("/token/refresh", response_model=TokenResponse)
 async def refresh_access_token(
-        authorization: str = Header(None),
         service: UserService = Depends(get_user_service),
         authorize: AuthJWT = Depends()
 ):
     """
     Обновление access-токена
     """
-    return await service.refresh_access_token(authorize, authorization)
+    return await service.refresh_access_token(authorize)
 
 
 @router.post("/logout", response_model=dict)
