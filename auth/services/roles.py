@@ -1,7 +1,9 @@
 from functools import lru_cache
-from typing import Optional, List
+from typing import List
 
 from fastapi import Depends, HTTPException, status
+from fastapi_jwt_auth import AuthJWT
+from redis.asyncio import Redis
 from sqlalchemy import delete, or_, update, and_
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,18 +11,23 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 
 from auth.db.postgres import get_db_session
+from auth.db.redis import get_redis
 from auth.models.users import Role, UserRole, User
 from auth.schema.roles import RoleSchema, RoleResponse, RoleUpdateSchema, UserRoleSchema, UserPermissionsSchema
 
 
 class RoleService:
-    def __init__(self, db_session: AsyncSession):
+    def __init__(self, db_session: AsyncSession, redis: Redis):
         self.db_session = db_session
+        self.redis = redis
 
-    async def create_role(self, role: RoleSchema) -> RoleSchema | None:
+    async def create_role(self, role: RoleSchema, Authorize: AuthJWT) -> RoleSchema | None:
         """
         Создание роли
         """
+        if not await self.is_admin(Authorize):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permissions denied")
+
         role_exist = await self.is_exist(role_name=role.name)
         if role_exist:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Role already exist")
@@ -31,10 +38,13 @@ class RoleService:
         await self.db_session.refresh(new_role)
         return new_role
 
-    async def delete_role(self, role_id: UUID = None, role_name: str = None) -> dict:
+    async def delete_role(self, Authorize: AuthJWT, role_id: UUID = None, role_name: str = None) -> dict:
         """
         Удаление роли
         """
+        if not await self.is_admin(Authorize):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permissions denied")
+
         if not any([role_id, role_name]):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -50,10 +60,13 @@ class RoleService:
         await self.db_session.commit()
         return {"message": f"Role '{role_exist.name}' deleted successfully"}
 
-    async def update_role(self, role_id: UUID, data: RoleUpdateSchema):
+    async def update_role(self, role_id: UUID, data: RoleUpdateSchema, Authorize: AuthJWT):
         """
         Обновление роли
         """
+        if not await self.is_admin(Authorize):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permissions denied")
+
         role_exist = await self.is_exist(role_id=role_id)
 
         if not role_exist:
@@ -63,7 +76,6 @@ class RoleService:
         await self.db_session.execute(update(Role).where(Role.id == role_exist.id).values(**update_data))
         await self.db_session.commit()
 
-        # Получение обновленной записи из базы данных
         result = await self.db_session.execute(select(Role).where(Role.id == role_id))
         updated_role = result.scalars().first()
 
@@ -84,10 +96,13 @@ class RoleService:
             result = await self.db_session.execute(select(Role).where(Role.name == role_name))
         return result.scalar_one_or_none()
 
-    async def assign_role_to_user(self, user_id, role_id) -> UserRoleSchema:
+    async def assign_role_to_user(self, user_id, role_id, Authorize: AuthJWT) -> UserRoleSchema:
         """
         Добавление роли пользователю
         """
+        if not await self.is_admin(Authorize):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permissions denied")
+
         result = await self.db_session.execute(
             select(UserRole).where(and_(UserRole.user_id == user_id, UserRole.role_id == role_id)))
         user_role_exist = result.scalar_one_or_none()
@@ -101,10 +116,13 @@ class RoleService:
         await self.db_session.refresh(new_user_role)
         return new_user_role
 
-    async def remove_role_from_user(self, user_id, role_id) -> dict:
+    async def remove_role_from_user(self, user_id, role_id, Authorize: AuthJWT) -> dict:
         """
         Удаление роли пользователя
         """
+        if not await self.is_admin(Authorize):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permissions denied")
+
         result = await self.db_session.execute(
             select(UserRole).where(and_(UserRole.user_id == user_id, UserRole.role_id == role_id)))
         user_role_exist = result.scalar_one_or_none()
@@ -132,6 +150,22 @@ class RoleService:
 
         return UserPermissionsSchema(user_id=user_id, permissions=user_permissions)
 
+    async def is_admin(self, Authorize: AuthJWT) -> bool:
+        """
+        Проверка, что пользователь admin
+        """
+        Authorize.jwt_required()
+
+        current_user = Authorize.get_jwt_subject()
+        user_data = await self.db_session.execute(
+            select(User).where(User.id == current_user).options(selectinload(User.roles))
+        )
+        user_data = user_data.scalar_one_or_none()
+        user_roles = [role.name for role in user_data.roles]
+        return "admin" in user_roles
+
+
 @lru_cache()
-def get_role_service(db_session: AsyncSession = Depends(get_db_session)) -> RoleService:
-    return RoleService(db_session)
+def get_role_service(db_session: AsyncSession = Depends(get_db_session),
+                     redis: Redis = Depends(get_redis)) -> RoleService:
+    return RoleService(db_session, redis)

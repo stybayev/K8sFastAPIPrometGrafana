@@ -17,6 +17,7 @@ class RoleUpdateSchema(BaseModel):
 
 
 class UserRoleSchema(BaseModel):
+    id: UUID
     user_id: UUID
     role_id: UUID
 

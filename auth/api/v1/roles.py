@@ -2,6 +2,7 @@ from typing import List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Path
+from fastapi_jwt_auth import AuthJWT
 
 from auth.schema.roles import RoleSchema, RoleResponse, RoleUpdateSchema, UserRoleSchema, UserPermissionsSchema
 from auth.services.roles import RoleService, get_role_service
@@ -10,17 +11,19 @@ router = APIRouter()
 
 
 @router.post("/", response_model=dict)
-async def create_role(role: RoleSchema, service: RoleService = Depends(get_role_service)) -> RoleResponse:
+async def create_role(role: RoleSchema, service: RoleService = Depends(get_role_service),
+                      Authorize: AuthJWT = Depends()) -> RoleResponse:
     """
     Создание роли
     """
-    new_role = await service.create_role(role)
+    new_role = await service.create_role(role, Authorize=Authorize)
     return RoleResponse.from_orm(new_role)
 
 
 @router.delete("/")
 async def delete_role(role_id: UUID = None, role_name: str = None,
-                      service: RoleService = Depends(get_role_service)) -> dict:
+                      service: RoleService = Depends(get_role_service),
+                      Authorize: AuthJWT = Depends()) -> dict:
     """
     Удалить роль по ID или имени.
 
@@ -30,13 +33,14 @@ async def delete_role(role_id: UUID = None, role_name: str = None,
 
     Необходимо указать либо role_id, либо name.
     """
-    result = await service.delete_role(role_id, role_name)
+    result = await service.delete_role(role_id=role_id, role_name=role_name, Authorize=Authorize)
     return result
 
 
 @router.patch("/{role_id}")
 async def update_role(role_id: UUID, data: RoleUpdateSchema,
-                      service: RoleService = Depends(get_role_service)) -> RoleResponse:
+                      service: RoleService = Depends(get_role_service),
+                      Authorize: AuthJWT = Depends()) -> RoleResponse:
     """
     Обновить роль по ID.
 
@@ -44,7 +48,7 @@ async def update_role(role_id: UUID, data: RoleUpdateSchema,
     - role_id: UUID - ID роли, которую нужно обновить.
     - data: RoleUpdateSchema - Данные для обновления.
     """
-    updated_role = await service.update_role(role_id, data)
+    updated_role = await service.update_role(role_id, data, Authorize=Authorize)
     return RoleResponse.from_orm(updated_role)
 
 
@@ -60,7 +64,8 @@ async def get_roles(service: RoleService = Depends(get_role_service)) -> List[Ro
 @router.post("/users/{user_id}/roles/{role_id}")
 async def assign_role_to_user(user_id: UUID = Path(..., description="User ID"),
                               role_id: UUID = Path(..., description="Role ID"),
-                              service: RoleService = Depends(get_role_service)) -> UserRoleSchema:
+                              service: RoleService = Depends(get_role_service),
+                              Authorize: AuthJWT = Depends()) -> UserRoleSchema:
     """
     Назначение роли пользователю.
 
@@ -68,14 +73,15 @@ async def assign_role_to_user(user_id: UUID = Path(..., description="User ID"),
     - user_id: UUID - ID пользователя, которому добавляем.
     - role_id: UUID - ID роли, которую нужно добавить.
     """
-    user_role = await service.assign_role_to_user(user_id, role_id)
+    user_role = await service.assign_role_to_user(user_id, role_id, Authorize=Authorize)
     return UserRoleSchema.from_orm(user_role)
 
 
 @router.delete("/users/{user_id}/roles/{role_id}")
 async def remove_role_from_user(user_id: UUID = Path(..., description="User ID"),
                                 role_id: UUID = Path(..., description="Role ID"),
-                                service: RoleService = Depends(get_role_service)) -> dict:
+                                service: RoleService = Depends(get_role_service),
+                                Authorize: AuthJWT = Depends()) -> dict:
     """
     Удаление роли пользователя.
 
@@ -83,7 +89,7 @@ async def remove_role_from_user(user_id: UUID = Path(..., description="User ID")
     - user_id: UUID - ID пользователя, которому удаляем.
     - role_id: UUID - ID роли, которую нужно удалить.
     """
-    result = await service.remove_role_from_user(user_id, role_id)
+    result = await service.remove_role_from_user(user_id, role_id, Authorize=Authorize)
     return result
 
 
@@ -102,3 +108,4 @@ async def check_user_permissions(user_id: UUID = Path(..., description="User ID"
 #     Реализация кнопки "Выйти из остальных аккаунтов"
 #     """
 #     pass
+

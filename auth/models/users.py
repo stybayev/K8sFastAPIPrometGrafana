@@ -13,6 +13,7 @@ class UserRole(Base):
     __tablename__ = 'user_roles'
     __table_args__ = {'schema': 'auth'}
 
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True)
     user_id = Column(UUID(as_uuid=True), ForeignKey('auth.users.id'), primary_key=True)
     role_id = Column(UUID(as_uuid=True), ForeignKey('auth.roles.id'), primary_key=True)
 
