@@ -8,8 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from auth.db.postgres import get_db_session
-from auth.models.users import Role
+from auth.models.users import Role, UserRole, User
 from auth.schema.roles import RoleSchema, RoleResponse, RoleUpdateSchema
+import uuid
 
 
 class RoleService:
@@ -82,6 +83,34 @@ class RoleService:
         if role_name:
             result = await self.db_session.execute(select(Role).where(Role.name == role_name))
         return result.scalar_one_or_none()
+
+    async def assign_role_to_user(self, user_id: uuid.UUID, role_id: uuid.UUID) -> dict:
+        """
+        Назначение роли пользователю
+        """
+        # Проверяем существует ли пользователь
+        user = await self.db_session.get(User, user_id)
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
+
+        # Проверяем существует ли роль
+        role = await self.db_session.get(Role, role_id)
+        if not role:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Role not found')
+
+        # Проверяем, не назначена ли уже эта роль пользователю
+        user_role_exist = await self.db_session.execute(
+            select(UserRole).
+            where(UserRole.user_id == user_id, UserRole.role_id == role_id)
+        )
+        if user_role_exist.scalar_one_or_none():
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Role already assigned to user')
+
+        # Назначаем роль пользователю
+        user_role = UserRole(user_id=user_id, role_id=role_id)
+        self.db_session.add(user_role)
+        await self.db_session.commit()
+        return {"message": f"Role '{role.name}' assigned to user '{user.login}' successfully"}
 
 
 @lru_cache()
