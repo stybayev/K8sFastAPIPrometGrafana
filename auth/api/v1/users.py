@@ -102,10 +102,7 @@ async def update_user_credentials(
       - `first_name`: Имя пользователя.
       - `last_name`: Фамилия пользователя.
     """
-    try:
-        Authorize.jwt_required()
-    except AuthJWTException as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+    Authorize.jwt_required()
 
     user_id = uuid.UUID(Authorize.get_jwt_subject())
 

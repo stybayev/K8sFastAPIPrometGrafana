@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 
+from auth.core.utils import admin_required
 from auth.db.postgres import get_db_session
 from auth.db.redis import get_redis
 from auth.models.users import Role, UserRole, User
@@ -21,12 +22,11 @@ class RoleService:
         self.db_session = db_session
         self.redis = redis
 
+    @admin_required
     async def create_role(self, role: RoleSchema, Authorize: AuthJWT) -> RoleSchema | None:
         """
         Создание роли
         """
-        if not await self.is_admin(Authorize):
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permissions denied")
 
         role_exist = await self.is_exist(role_name=role.name)
         if role_exist:
@@ -38,13 +38,11 @@ class RoleService:
         await self.db_session.refresh(new_role)
         return new_role
 
+    @admin_required
     async def delete_role(self, Authorize: AuthJWT, role_id: UUID = None, role_name: str = None) -> dict:
         """
         Удаление роли
         """
-        if not await self.is_admin(Authorize):
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permissions denied")
-
         if not any([role_id, role_name]):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -60,13 +58,11 @@ class RoleService:
         await self.db_session.commit()
         return {"message": f"Role '{role_exist.name}' deleted successfully"}
 
+    @admin_required
     async def update_role(self, role_id: UUID, data: RoleUpdateSchema, Authorize: AuthJWT):
         """
         Обновление роли
         """
-        if not await self.is_admin(Authorize):
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permissions denied")
-
         role_exist = await self.is_exist(role_id=role_id)
 
         if not role_exist:
@@ -88,21 +84,11 @@ class RoleService:
         roles = await self.db_session.execute(select(Role))
         return [RoleResponse.from_orm(role) for role in roles.scalars().all()]
 
-    async def is_exist(self, role_id: UUID = None, role_name: str = None) -> Role | None:
-        result = None
-        if role_id:
-            result = await self.db_session.execute(select(Role).where(Role.id == role_id))
-        if role_name:
-            result = await self.db_session.execute(select(Role).where(Role.name == role_name))
-        return result.scalar_one_or_none()
-
+    @admin_required
     async def assign_role_to_user(self, user_id, role_id, Authorize: AuthJWT) -> UserRoleSchema:
         """
         Добавление роли пользователю
         """
-        if not await self.is_admin(Authorize):
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permissions denied")
-
         result = await self.db_session.execute(
             select(UserRole).where(and_(UserRole.user_id == user_id, UserRole.role_id == role_id)))
         user_role_exist = result.scalar_one_or_none()
@@ -116,13 +102,11 @@ class RoleService:
         await self.db_session.refresh(new_user_role)
         return new_user_role
 
+    @admin_required
     async def remove_role_from_user(self, user_id, role_id, Authorize: AuthJWT) -> dict:
         """
         Удаление роли пользователя
         """
-        if not await self.is_admin(Authorize):
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permissions denied")
-
         result = await self.db_session.execute(
             select(UserRole).where(and_(UserRole.user_id == user_id, UserRole.role_id == role_id)))
         user_role_exist = result.scalar_one_or_none()
@@ -147,7 +131,6 @@ class RoleService:
         user_permissions = []
         for role in user.roles:
             user_permissions += role.permissions
-
         return UserPermissionsSchema(user_id=user_id, permissions=user_permissions)
 
     async def is_admin(self, Authorize: AuthJWT) -> bool:
@@ -163,6 +146,14 @@ class RoleService:
         user_data = user_data.scalar_one_or_none()
         user_roles = [role.name for role in user_data.roles]
         return "admin" in user_roles
+
+    async def is_exist(self, role_id: UUID = None, role_name: str = None) -> Role | None:
+        result = None
+        if role_id:
+            result = await self.db_session.execute(select(Role).where(Role.id == role_id))
+        if role_name:
+            result = await self.db_session.execute(select(Role).where(Role.name == role_name))
+        return result.scalar_one_or_none()
 
 
 @lru_cache()

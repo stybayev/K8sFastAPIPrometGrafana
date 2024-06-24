@@ -55,7 +55,6 @@ redis_client = Redis(host=settings.redis_host, port=settings.redis_port)
 @app.middleware("http")
 async def check_blacklist(request: Request, call_next):
     token = request.cookies.get("access_token")
-    print('token=', token)
     if token:
         try:
             decoded_token = AuthJWT().decode_token(token)

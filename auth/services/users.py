@@ -65,14 +65,8 @@ class UserService:
 
         roles = await self.get_user_roles(db_user.id)
         user_claims = {'id': str(db_user.id), 'roles': roles}
-        access_token = Authorize.create_access_token(subject=str(db_user.id), user_claims=user_claims,
-                                                     expires_time=settings.ACCESS_TOKEN_EXPIRES)
-        refresh_token = Authorize.create_refresh_token(subject=str(db_user.id),
-                                                       expires_time=settings.REFRESH_TOKEN_EXPIRES)
-
-        # Set the JWT cookies in the response
-        Authorize.set_access_cookies(access_token)
-        Authorize.set_refresh_cookies(refresh_token)
+        access_token = Authorize.create_access_token(subject=str(db_user.id), user_claims=user_claims)
+        refresh_token = Authorize.create_refresh_token(subject=str(db_user.id))
 
         await self.redis.set(f'access_token:{access_token}', str(db_user.id), ex=settings.ACCESS_TOKEN_EXPIRES * 60)
         await self.redis.set(f'refresh_token:{refresh_token}', str(db_user.id), ex=settings.REFRESH_TOKEN_EXPIRES * 60)
