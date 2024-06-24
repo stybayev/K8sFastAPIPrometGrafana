@@ -1,9 +1,13 @@
-from typing import List
-from fastapi import APIRouter, Depends, Path, HTTPException, Query, status
 from uuid import UUID
-from auth.models.users import Role
 from auth.schema.roles import RoleSchema, RoleResponse, RoleUpdateSchema, AssignRoleResponse
 from auth.services.roles import RoleService, get_role_service
+import uuid
+from typing import List
+from fastapi import APIRouter, Depends, Path, HTTPException, Query, status
+from fastapi import Depends, HTTPException, status
+
+from fastapi_jwt_auth import AuthJWT
+from fastapi_jwt_auth.exceptions import AuthJWTException
 
 router = APIRouter()
 
@@ -60,7 +64,8 @@ async def get_roles(service: RoleService = Depends(get_role_service)):
 async def assign_role_to_user(
         user_id: UUID = Path(..., description="User ID"),
         role_id: UUID = Path(..., description="Role ID"),
-        service: RoleService = Depends(get_role_service)
+        service: RoleService = Depends(get_role_service),
+        Authorize: AuthJWT = Depends()
 ):
     """
     Назначение роли пользователю
@@ -80,6 +85,19 @@ async def assign_role_to_user(
     - **404 Not Found**: Пользователь или роль не найдены.
     - **400 Bad Request**: Роль уже назначена пользователю.
     """
+    try:
+        Authorize.jwt_required()
+    except AuthJWTException as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+
+    # Получаем роли текущего пользователя из токена
+    current_user_roles = Authorize.get_raw_jwt().get('roles', [])
+    print(current_user_roles)
+
+    # Проверяем, что текущий пользователь имеет права администратора
+    if "admin" not in current_user_roles:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Operation not permitted")
+
     result = await service.assign_role_to_user(user_id, role_id)
     return AssignRoleResponse(user_id=user_id, role_id=role_id, message=result["message"])
 
