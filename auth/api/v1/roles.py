@@ -92,7 +92,6 @@ async def assign_role_to_user(
 
     # Получаем роли текущего пользователя из токена
     current_user_roles = Authorize.get_raw_jwt().get('roles', [])
-    print(current_user_roles)
 
     # Проверяем, что текущий пользователь имеет права администратора
     if "admin" not in current_user_roles:
