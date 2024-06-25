@@ -1,15 +1,22 @@
 import uuid
-from typing import List
-from fastapi import APIRouter, Depends, Path, HTTPException, Query, status
+import datetime
 
-from auth.schema.tokens import TokenResponse, LoginRequest
-from auth.schema.users import UserResponse, UserCreate, UpdateUserCredentialsRequest
-
+from sqlalchemy.future import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
+from functools import lru_cache
+from typing import Optional, List
 from fastapi import Depends, HTTPException, status
 
-from auth.services.users import UserService, get_user_service
+from auth.core.config import settings
+from auth.db.postgres import get_db_session
+from auth.db.redis import get_redis
+from auth.models.users import User, UserRole, Role
+from auth.schema.tokens import TokenResponse
 from fastapi_jwt_auth import AuthJWT
-from fastapi_jwt_auth.exceptions import AuthJWTException
+from redis.asyncio import Redis
+from werkzeug.security import generate_password_hash
+from fastapi_jwt_auth.exceptions import AuthJWTExceptionn
 
 router = APIRouter()
 
@@ -63,12 +70,23 @@ async def login_user(user: LoginRequest, service: UserService = Depends(get_user
     return tokens
 
 
-@router.post("/token/refresh", response_model=dict)
-async def refresh_access_token():
+@router.post("/token/refresh", response_model=TokenResponse)
+async def refresh_access_token(
+        service: UserService = Depends(get_user_service),
+        authorize: AuthJWT = Depends()
+):
     """
-    Обновление access-токена
+    ## Обновление Access токена
+
+    Этот эндпоинт позволяет обновить Access токен пользователя используя его Refresh токен.
+    При этом старый Refresh токен добавляется в невалидные и пользователю выдается новая
+    пара Access, Refresh токенов
+
+    ### Возвращает:
+      - `access-token`: Access токен.
+      - `refresh-token`: Refresh токен.
     """
-    pass
+    return await service.refresh_access_token(authorize)
 
 
 @router.post("/logout", response_model=dict)
