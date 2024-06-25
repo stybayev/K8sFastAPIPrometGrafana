@@ -87,12 +87,20 @@ async def refresh_access_token(
     return await service.refresh_access_token(authorize)
 
 
-@router.post("/logout", response_model=dict)
-async def logout_user():
+@router.post("/logout", response_model=bool)
+async def logout_user(
+        service: UserService = Depends(get_user_service),
+        authorize: AuthJWT = Depends()
+):
     """
-    Выход пользователя из аккаунта
+    ## Выход пользователя из аккаунта
+
+    Этот эндпоинт реализует выход пользователя из аккаунта. Добавляет текущие Refresh и Access токены в невалидные
+
+    ### Возвращает:
+      - `True`: в случае успешного выхода.
     """
-    pass
+    return await service.logout_user(authorize)
 
 
 @router.patch("/update-credentials",
