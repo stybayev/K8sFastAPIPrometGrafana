@@ -3,20 +3,18 @@ import datetime
 
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import IntegrityError
-from functools import lru_cache
-from typing import Optional, List
+import uuid
+from typing import List
+from fastapi import APIRouter, Depends, Path, HTTPException, Query, status
+
+from auth.schema.tokens import TokenResponse, LoginRequest
+from auth.schema.users import UserResponse, UserCreate, UpdateUserCredentialsRequest
+
 from fastapi import Depends, HTTPException, status
 
-from auth.core.config import settings
-from auth.db.postgres import get_db_session
-from auth.db.redis import get_redis
-from auth.models.users import User, UserRole, Role
-from auth.schema.tokens import TokenResponse
+from auth.services.users import UserService, get_user_service
 from fastapi_jwt_auth import AuthJWT
-from redis.asyncio import Redis
-from werkzeug.security import generate_password_hash
-from fastapi_jwt_auth.exceptions import AuthJWTExceptionn
+from fastapi_jwt_auth.exceptions import AuthJWTException
 
 router = APIRouter()
 
