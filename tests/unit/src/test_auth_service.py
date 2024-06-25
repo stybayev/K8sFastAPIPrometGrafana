@@ -1,15 +1,17 @@
-from unittest.mock import patch
-
-import pytest
-from httpx import AsyncClient
 from sqlalchemy.exc import IntegrityError
-from auth.models.users import User
 
 from werkzeug.security import generate_password_hash
 
 from auth.services.users import UserService
+import pytest
+from unittest.mock import patch, AsyncMock
+import uuid
+from httpx import AsyncClient
+from auth.models.users import User, Role, UserRole
+from auth.services.roles import RoleService
 from fastapi import status
 from fastapi_jwt_auth import AuthJWT
+from fastapi_jwt_auth.exceptions import AuthJWTException
 
 
 @pytest.mark.anyio
@@ -151,3 +153,41 @@ async def test_update_user_credentials_unauthorized(auth_async_client: AsyncClie
     response = await auth_async_client.patch('/users/update-credentials', json=update_data)
 
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+@pytest.mark.anyio
+async def test_assign_role_to_user_success(auth_async_client: AsyncClient,
+                                           existing_user: User):
+    user_id = existing_user.id
+    role_id = uuid.uuid4()
+
+    # Мок для роли
+    mock_role = Role(name='test_role', description='Test Role')
+    mock_role.id = role_id
+
+    # Мок для UserRole
+    mock_user_role = UserRole(user_id=user_id, role_id=role_id)
+    mock_user_role.id = uuid.uuid4()
+
+    # Настройка мока для методов RoleService
+    with (patch.object(RoleService, 'check_admin_permissions', return_value=None),
+          patch.object(RoleService, 'assign_role_to_user',
+                       return_value={'message': "Role 'test_role' assigned to user 'test_user' successfully"})):
+        response = await auth_async_client.post(f'roles/users/{user_id}/roles/{role_id}')
+
+        assert response.status_code == 200
+
+        data = response.json()
+        assert data['user_id'] == str(user_id)
+        assert data['role_id'] == str(role_id)
+        assert data['message'] == "Role 'test_role' assigned to user 'test_user' successfully"
+
+
+@pytest.mark.anyio
+async def test_assign_role_to_user_unauthorized(auth_async_client: AsyncClient, existing_user: User):
+    user_id = existing_user.id
+    role_id = uuid.uuid4()
+
+    response = await auth_async_client.post(f'roles/users/{user_id}/roles/{role_id}')
+
+    assert response.status_code == 401
