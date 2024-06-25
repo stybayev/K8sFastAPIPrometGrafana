@@ -3,8 +3,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Response, status
 from fastapi.responses import ORJSONResponse
 from fastapi_jwt_auth import AuthJWT
-from fastapi_jwt_auth.exceptions import AuthJWTException
+from fastapi_jwt_auth.exceptions import AuthJWTException, JWTDecodeError
 from redis.asyncio import Redis
+from starlette.middleware.base import RequestResponseEndpoint
 from starlette.responses import JSONResponse
 
 from auth.api.v1 import users, roles
@@ -51,25 +52,33 @@ def authjwt_exception_handler(request: Request, exc: AuthJWTException):
 redis_client = Redis(host=settings.redis_host, port=settings.redis_port)
 
 
-# Middleware для проверки черного списка токенов
 @app.middleware("http")
 async def check_blacklist(request: Request, call_next):
-    token = request.headers.get("access_token")
+    # Пока работает только с access_token (нужно определиться, как мы будем передавать рефреш)
+    token = request.headers.get("Authorization")
     if token:
         try:
-            decoded_token = AuthJWT().decode_token(token)
-            jti = decoded_token['jti']
-            if redis_client.get(jti) == "blacklisted":
-                return Response(
+            # По умолчанию fastapi-jwt-auth в заготовок к токену добавляет Bearer
+            access_token = token[len("Bearer "):]  # Удаление префикса 'Bearer '
+            Authorize = AuthJWT()
+            raw_jwt = Authorize.get_raw_jwt(encoded_token=access_token)
+            jti = raw_jwt.get('jti')
+
+            if await redis_client.get(jti) == "blacklisted":
+                return JSONResponse(
                     status_code=status.HTTP_401_UNAUTHORIZED,
-                    content={"detail": "Token is blacklisted"},
-                    media_type="application/json"
+                    content={"detail": "Token is blacklisted"}
                 )
-        except AuthJWTException as e:
-            return Response(
+
+        except JWTDecodeError as e:
+            return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                content={"detail": "Invalid token"},
-                media_type="application/json"
+                content={"detail": "Invalid token"}
+            )
+        except AuthJWTException as e:
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                content={"detail": str(e)}
             )
 
     response = await call_next(request)

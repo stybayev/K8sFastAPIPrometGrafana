@@ -85,34 +85,51 @@ class RoleService:
         return [RoleResponse.from_orm(role) for role in roles.scalars().all()]
 
     @admin_required
-    async def assign_role_to_user(self, user_id, role_id, Authorize: AuthJWT) -> UserRoleSchema:
+    async def assign_role_to_user(self, user_id: UUID, role_id: UUID, Authorize: AuthJWT) -> dict:
         """
-        Добавление роли пользователю
+        Назначение роли пользователю
         """
-        result = await self.db_session.execute(
-            select(UserRole).where(and_(UserRole.user_id == user_id, UserRole.role_id == role_id)))
-        user_role_exist = result.scalar_one_or_none()
+        # Проверяем существует ли пользователь
+        user = await self.db_session.get(User, user_id)
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
 
-        if user_role_exist:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="UserRole already exist")
+        # Проверяем существует ли роль
+        role = await self.db_session.get(Role, role_id)
+        if not role:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Role not found')
 
-        new_user_role = UserRole(user_id=user_id, role_id=role_id)
-        self.db_session.add(new_user_role)
+        # Проверяем, не назначена ли уже эта роль пользователю
+        user_role_exist = await self.db_session.execute(
+            select(UserRole).where(and_(UserRole.user_id == user_id, UserRole.role_id == role_id))
+        )
+        if user_role_exist.scalar_one_or_none():
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Role already assigned to user')
+
+        # Назначаем роль пользователю
+        user_role = UserRole(user_id=user_id, role_id=role_id)
+        self.db_session.add(user_role)
         await self.db_session.commit()
-        await self.db_session.refresh(new_user_role)
-        return new_user_role
+        return {"message": f"Role '{role.name}' assigned to user '{user.login}' successfully"}
 
     @admin_required
     async def remove_role_from_user(self, user_id, role_id, Authorize: AuthJWT) -> dict:
         """
         Удаление роли пользователя
         """
+        user = await self.db_session.get(User, user_id)
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
+
         result = await self.db_session.execute(
             select(UserRole).where(and_(UserRole.user_id == user_id, UserRole.role_id == role_id)))
         user_role_exist = result.scalar_one_or_none()
-
         if not user_role_exist:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="UserRole not found")
+
+        role = await self.db_session.get(Role, role_id)
+        if not role:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Role not found')
 
         await self.db_session.execute(
             delete(UserRole).where(and_(UserRole.user_id == user_id, UserRole.role_id == role_id)))
