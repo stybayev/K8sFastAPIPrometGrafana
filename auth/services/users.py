@@ -116,7 +116,7 @@ class UserService:
                 detail="Token already used. Need use other refresh token."
             )
         # проверка, нет ли токена в невалидных
-        invalid_token = await self.redis.get(f"invalid_token:{user_id}")
+        invalid_token = await self.redis.get(f"invalid_token:{raw_jwt['jti']}")
         if invalid_token:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -125,7 +125,10 @@ class UserService:
         roles = await self.get_user_roles(uuid.UUID(user_id))
         user_claims = {'id': user_id, 'roles': roles}
 
+        # добавим Refresh и Access токены в невалидные
         await self.redis.delete(f"refresh_token:{raw_jwt['jti']}")
+        await self.redis.delete(f"access_token:{raw_jwt['jti']}")
+        await self.redis.set(f"invalid_token:{raw_jwt['jti']}", user_id)
         await self.redis.set(f"invalid_token:{raw_jwt['jti']}", user_id)
         return await self.generate_tokens(authorize, user_claims, user_id)
 
