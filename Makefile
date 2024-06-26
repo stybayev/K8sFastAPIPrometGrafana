@@ -4,3 +4,5 @@ run-dev:
 stop-dev:
 	docker-compose -f docker-compose.dev.yml down
 
+test:
+    pytest tests/unit -p no:warnings
