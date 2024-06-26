@@ -97,34 +97,25 @@ class UserService:
         """
         Выход пользователя из аккаунта
         """
-        # проверяем access токен
         try:
-            authorize.fresh_jwt_required()
+            authorize.jwt_refresh_token_required()
         except AuthJWTException:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail='Invalid token'
+                detail='Invalid refresh token'
             )
+
         raw_jwt = authorize.get_raw_jwt()
         user_id = raw_jwt['sub']
-        # проверяем, чтобы токена не было в невалидных
-        invalid_token = await self.redis.get(f"invalid_token:{raw_jwt['jti']}")
-        if invalid_token:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token"
-            )
-        await self.add_access_refresh_to_invalid(raw_jwt['jti'], user_id)
+        jti = raw_jwt['jti']
+
+        await self.add_access_refresh_to_invalid(jti, user_id)
         return True
 
     async def add_access_refresh_to_invalid(self, jti, user_id):
         """
         Добавление Access и Refresh токенов в невалидные
         """
-        # добавим Refresh и Access токены в невалидные
-        await self.redis.delete(f"refresh_token:{jti}")
-        await self.redis.delete(f"access_token:{jti}")
-        await self.redis.set(f"invalid_token:{jti}", user_id)
         await self.redis.set(f"invalid_token:{jti}", user_id)
 
     async def refresh_access_token(self, authorize: AuthJWT) -> TokenResponse:
@@ -182,16 +173,16 @@ class UserService:
             subject=str(user_id),
             expires_time=datetime.timedelta(minutes=settings.REFRESH_TOKEN_EXPIRES)
         )
-        await self.redis.set(
-            f'access_token:{access_token}',
-            str(user_id),
-            ex=settings.ACCESS_TOKEN_EXPIRES * 60
-        )
-        await self.redis.set(
-            f'refresh_token:{refresh_token}',
-            str(user_id),
-            ex=settings.REFRESH_TOKEN_EXPIRES * 60
-        )
+        # await self.redis.set(
+        #     f'access_token:{access_token}',
+        #     str(user_id),
+        #     ex=settings.ACCESS_TOKEN_EXPIRES * 60
+        # )
+        # await self.redis.set(
+        #     f'refresh_token:{refresh_token}',
+        #     str(user_id),
+        #     ex=settings.REFRESH_TOKEN_EXPIRES * 60
+        # )
         return TokenResponse(refresh_token=refresh_token, access_token=access_token)
 
 

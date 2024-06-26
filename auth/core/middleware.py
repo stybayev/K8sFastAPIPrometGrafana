@@ -13,13 +13,12 @@ async def check_blacklist(request: Request, call_next):
     token = request.headers.get("Authorization")
     if token:
         try:
-            # По умолчанию fastapi-jwt-auth в заготовок к токену добавляет Bearer
             access_token = token[len("Bearer "):]  # Удаление префикса 'Bearer '
             Authorize = AuthJWT()
             raw_jwt = Authorize.get_raw_jwt(encoded_token=access_token)
             jti = raw_jwt.get('jti')
 
-            if await redis_client.get(jti) == "blacklisted":
+            if await redis_client.get(f"invalid_token:{jti}"):
                 return JSONResponse(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     content={"detail": "Token is blacklisted"}
@@ -36,5 +35,30 @@ async def check_blacklist(request: Request, call_next):
                 content={"detail": str(e)}
             )
 
+    refresh_token = request.headers.get("X-Refresh-Token")
+    if refresh_token:
+        try:
+            Authorize = AuthJWT()
+            raw_jwt = Authorize.get_raw_jwt(encoded_token=refresh_token)
+            jti = raw_jwt.get('jti')
+
+            if await redis_client.get(f"invalid_token:{jti}"):
+                return JSONResponse(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    content={"detail": "Refresh token is blacklisted"}
+                )
+
+        except JWTDecodeError:
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                content={"detail": "Invalid refresh token"}
+            )
+        except AuthJWTException as e:
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                content={"detail": str(e)}
+            )
+
     response = await call_next(request)
     return response
+
