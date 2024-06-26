@@ -15,6 +15,7 @@ from werkzeug.security import generate_password_hash
 from fastapi_jwt_auth.exceptions import AuthJWTException
 
 from auth.services.tokens import TokenService
+from auth.utils.permissions import refresh_token_required
 
 
 class UserService:
@@ -92,17 +93,11 @@ class UserService:
 
         return user
 
+    @refresh_token_required
     async def logout_user(self, authorize: AuthJWT) -> bool:
         """
         Выход пользователя из аккаунта
         """
-        try:
-            authorize.jwt_refresh_token_required()
-        except AuthJWTException:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail='Invalid refresh token'
-            )
 
         raw_jwt = authorize.get_raw_jwt()
         user_id = raw_jwt['sub']
@@ -112,6 +107,7 @@ class UserService:
         await self.token_service.add_tokens_to_invalid(access_jti, refresh_jti, user_id)
         return True
 
+    @refresh_token_required
     async def refresh_access_token(self, authorize: AuthJWT) -> TokenResponse:
         """
         Получение новой пары токенов Access и Refresh
