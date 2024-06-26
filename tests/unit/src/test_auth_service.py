@@ -170,8 +170,7 @@ async def test_assign_role_to_user_success(auth_async_client: AsyncClient,
     mock_user_role.id = uuid.uuid4()
 
     # Настройка мока для методов RoleService
-    with (patch.object(RoleService, 'check_admin_permissions', return_value=None),
-          patch.object(RoleService, 'assign_role_to_user',
+    with (patch.object(RoleService, 'assign_role_to_user',
                        return_value={'message': "Role 'test_role' assigned to user 'test_user' successfully"})):
         response = await auth_async_client.post(f'roles/users/{user_id}/roles/{role_id}')
 

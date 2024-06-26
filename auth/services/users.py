@@ -1,14 +1,10 @@
 import uuid
-import datetime
-
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 from functools import lru_cache
 from typing import Optional, List
 from fastapi import Depends, HTTPException, status
-
-from auth.core.config import settings
 from auth.db.postgres import get_db_session
 from auth.db.redis import get_redis
 from auth.models.users import User, UserRole, Role
@@ -18,11 +14,15 @@ from redis.asyncio import Redis
 from werkzeug.security import generate_password_hash
 from fastapi_jwt_auth.exceptions import AuthJWTException
 
+from auth.services.tokens import TokenService
+from auth.utils.permissions import refresh_token_required
+
 
 class UserService:
-    def __init__(self, db_session: AsyncSession, redis: Redis):
+    def __init__(self, db_session: AsyncSession, redis: Redis, token_service: TokenService):
         self.db_session = db_session
-        self.redis = redis
+        self.redis = redis,
+        self.token_service = token_service
 
     async def get_by_login(self, login: str) -> Optional[User]:
         """
@@ -68,7 +68,7 @@ class UserService:
 
         roles = await self.get_user_roles(db_user.id)
         user_claims = {'id': str(db_user.id), 'roles': roles}
-        return await self.generate_tokens(Authorize, user_claims, db_user.id)
+        return await self.token_service.generate_tokens(Authorize, user_claims, db_user.id)
 
     async def update_user_credentials(self, user_id: uuid.UUID, login: Optional[str] = None,
                                       password: Optional[str] = None) -> User:
@@ -93,45 +93,25 @@ class UserService:
 
         return user
 
+    @refresh_token_required
     async def logout_user(self, authorize: AuthJWT) -> bool:
         """
         Выход пользователя из аккаунта
         """
-        # проверяем access токен
-        try:
-            authorize.fresh_jwt_required()
-        except AuthJWTException:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail='Invalid token'
-            )
+
         raw_jwt = authorize.get_raw_jwt()
         user_id = raw_jwt['sub']
-        # проверяем, чтобы токена не было в невалидных
-        invalid_token = await self.redis.get(f"invalid_token:{raw_jwt['jti']}")
-        if invalid_token:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token"
-            )
-        await self.add_access_refresh_to_invalid(raw_jwt['jti'], user_id)
+        refresh_jti = raw_jwt['jti']
+        access_jti = raw_jwt['access_jti']
+
+        await self.token_service.add_tokens_to_invalid(access_jti, refresh_jti, user_id)
         return True
 
-    async def add_access_refresh_to_invalid(self, jti, user_id):
-        """
-        Добавление Access и Refresh токенов в невалидные
-        """
-        # добавим Refresh и Access токены в невалидные
-        await self.redis.delete(f"refresh_token:{jti}")
-        await self.redis.delete(f"access_token:{jti}")
-        await self.redis.set(f"invalid_token:{jti}", user_id)
-        await self.redis.set(f"invalid_token:{jti}", user_id)
-
+    @refresh_token_required
     async def refresh_access_token(self, authorize: AuthJWT) -> TokenResponse:
         """
         Получение новой пары токенов Access и Refresh
         """
-        # проверяем токен
         try:
             authorize.jwt_refresh_token_required()
         except AuthJWTException:
@@ -142,60 +122,16 @@ class UserService:
 
         raw_jwt = authorize.get_raw_jwt()
         user_id = raw_jwt['sub']
-        not_unique_token = await self.redis.get(f'refresh_token:{raw_jwt["jti"]}')
-        # проверка на одноразовость
-        if not_unique_token:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Token already used. Need use other refresh token."
-            )
-        # проверка, нет ли токена в невалидных
-        invalid_token = await self.redis.get(f"invalid_token:{raw_jwt['jti']}")
-        if invalid_token:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail='Invalid token'
-            )
+
         roles = await self.get_user_roles(uuid.UUID(user_id))
         user_claims = {'id': user_id, 'roles': roles}
 
-        # добавим Refresh и Access токены в невалидные
-        await self.add_access_refresh_to_invalid(raw_jwt['jti'], user_id)
-        return await self.generate_tokens(authorize, user_claims, user_id)
-
-    async def generate_tokens(
-            self,
-            authorize: AuthJWT,
-            claims: dict,
-            user_id: str
-    ) -> TokenResponse:
-        """
-        Процедура генерации пары токенов
-        """
-        access_token = authorize.create_access_token(
-            subject=str(user_id),
-            user_claims=claims,
-            fresh=True,
-            expires_time=datetime.timedelta(minutes=settings.ACCESS_TOKEN_EXPIRES)
-        )
-        refresh_token = authorize.create_refresh_token(
-            subject=str(user_id),
-            expires_time=datetime.timedelta(minutes=settings.REFRESH_TOKEN_EXPIRES)
-        )
-        await self.redis.set(
-            f'access_token:{access_token}',
-            str(user_id),
-            ex=settings.ACCESS_TOKEN_EXPIRES * 60
-        )
-        await self.redis.set(
-            f'refresh_token:{refresh_token}',
-            str(user_id),
-            ex=settings.REFRESH_TOKEN_EXPIRES * 60
-        )
-        return TokenResponse(refresh_token=refresh_token, access_token=access_token)
+        await self.token_service.add_tokens_to_invalid(raw_jwt['access_jti'], raw_jwt['jti'], user_id)
+        return await self.token_service.generate_tokens(authorize, user_claims, user_id)
 
 
 @lru_cache()
 def get_user_service(db_session: AsyncSession = Depends(get_db_session),
                      redis: Redis = Depends(get_redis)) -> UserService:
-    return UserService(db_session, redis)
+    token_service = TokenService(redis)
+    return UserService(db_session, redis, token_service)

@@ -10,11 +10,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 
-from auth.core.utils import admin_required
 from auth.db.postgres import get_db_session
 from auth.db.redis import get_redis
 from auth.models.users import Role, UserRole, User
-from auth.schema.roles import RoleSchema, RoleResponse, RoleUpdateSchema, UserRoleSchema, UserPermissionsSchema
+from auth.schema.roles import RoleSchema, RoleResponse, RoleUpdateSchema, UserPermissionsSchema
+from auth.utils.permissions import admin_required
 
 
 class RoleService:
