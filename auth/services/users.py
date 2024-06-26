@@ -93,6 +93,40 @@ class UserService:
 
         return user
 
+    async def logout_user(self, authorize: AuthJWT) -> bool:
+        """
+        Выход пользователя из аккаунта
+        """
+        # проверяем access токен
+        try:
+            authorize.fresh_jwt_required()
+        except AuthJWTException:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail='Invalid token'
+            )
+        raw_jwt = authorize.get_raw_jwt()
+        user_id = raw_jwt['sub']
+        # проверяем, чтобы токена не было в невалидных
+        invalid_token = await self.redis.get(f"invalid_token:{raw_jwt['jti']}")
+        if invalid_token:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token"
+            )
+        await self.add_access_refresh_to_invalid(raw_jwt['jti'], user_id)
+        return True
+
+    async def add_access_refresh_to_invalid(self, jti, user_id):
+        """
+        Добавление Access и Refresh токенов в невалидные
+        """
+        # добавим Refresh и Access токены в невалидные
+        await self.redis.delete(f"refresh_token:{jti}")
+        await self.redis.delete(f"access_token:{jti}")
+        await self.redis.set(f"invalid_token:{jti}", user_id)
+        await self.redis.set(f"invalid_token:{jti}", user_id)
+
     async def refresh_access_token(self, authorize: AuthJWT) -> TokenResponse:
         """
         Получение новой пары токенов Access и Refresh
@@ -107,7 +141,7 @@ class UserService:
             )
 
         raw_jwt = authorize.get_raw_jwt()
-        user_id = raw_jwt['jti']
+        user_id = raw_jwt['sub']
         not_unique_token = await self.redis.get(f'refresh_token:{raw_jwt["jti"]}')
         # проверка на одноразовость
         if not_unique_token:
@@ -116,7 +150,7 @@ class UserService:
                 detail="Token already used. Need use other refresh token."
             )
         # проверка, нет ли токена в невалидных
-        invalid_token = await self.redis.get(f"invalid_token:{user_id}")
+        invalid_token = await self.redis.get(f"invalid_token:{raw_jwt['jti']}")
         if invalid_token:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -125,8 +159,8 @@ class UserService:
         roles = await self.get_user_roles(uuid.UUID(user_id))
         user_claims = {'id': user_id, 'roles': roles}
 
-        await self.redis.delete(f"refresh_token:{raw_jwt['jti']}")
-        await self.redis.set(f"invalid_token:{raw_jwt['jti']}", user_id)
+        # добавим Refresh и Access токены в невалидные
+        await self.add_access_refresh_to_invalid(raw_jwt['jti'], user_id)
         return await self.generate_tokens(authorize, user_claims, user_id)
 
     async def generate_tokens(
