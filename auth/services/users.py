@@ -1,14 +1,10 @@
 import uuid
-import datetime
-
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 from functools import lru_cache
 from typing import Optional, List
 from fastapi import Depends, HTTPException, status
-
-from auth.core.config import settings
 from auth.db.postgres import get_db_session
 from auth.db.redis import get_redis
 from auth.models.users import User, UserRole, Role
