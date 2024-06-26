@@ -126,7 +126,6 @@ class UserService:
         roles = await self.get_user_roles(uuid.UUID(user_id))
         user_claims = {'id': user_id, 'roles': roles}
 
-        await self.token_service.add_tokens_to_invalid(raw_jwt['access_jti'], raw_jwt['jti'], user_id)
         return await self.token_service.generate_tokens(authorize, user_claims, user_id)
 
 
