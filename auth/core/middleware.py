@@ -61,4 +61,3 @@ async def check_blacklist(request: Request, call_next):
 
     response = await call_next(request)
     return response
-

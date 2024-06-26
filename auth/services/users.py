@@ -8,7 +8,6 @@ from functools import lru_cache
 from typing import Optional, List
 from fastapi import Depends, HTTPException, status
 
-from auth.api.v1.tokens import TokenService
 from auth.core.config import settings
 from auth.db.postgres import get_db_session
 from auth.db.redis import get_redis
@@ -18,6 +17,8 @@ from fastapi_jwt_auth import AuthJWT
 from redis.asyncio import Redis
 from werkzeug.security import generate_password_hash
 from fastapi_jwt_auth.exceptions import AuthJWTException
+
+from auth.services.tokens import TokenService
 
 
 class UserService:
@@ -109,17 +110,16 @@ class UserService:
 
         raw_jwt = authorize.get_raw_jwt()
         user_id = raw_jwt['sub']
-        jti = raw_jwt['jti']
+        refresh_jti = raw_jwt['jti']
+        access_jti = raw_jwt['access_jti']
 
-        await self.token_service.add_access_refresh_to_invalid(jti, user_id)
+        await self.token_service.add_tokens_to_invalid(access_jti, refresh_jti, user_id)
         return True
-
 
     async def refresh_access_token(self, authorize: AuthJWT) -> TokenResponse:
         """
         Получение новой пары токенов Access и Refresh
         """
-        # проверяем токен
         try:
             authorize.jwt_refresh_token_required()
         except AuthJWTException:
@@ -134,8 +134,7 @@ class UserService:
         roles = await self.get_user_roles(uuid.UUID(user_id))
         user_claims = {'id': user_id, 'roles': roles}
 
-        # добавим Refresh и Access токены в невалидные
-        await self.token_service.add_access_refresh_to_invalid(raw_jwt['jti'], user_id)
+        await self.token_service.add_tokens_to_invalid(raw_jwt['access_jti'], raw_jwt['jti'], user_id)
         return await self.token_service.generate_tokens(authorize, user_claims, user_id)
 
 
