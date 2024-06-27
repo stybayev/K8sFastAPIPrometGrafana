@@ -8,7 +8,9 @@ from unittest.mock import patch, AsyncMock
 import uuid
 from httpx import AsyncClient
 from auth.models.users import User, Role, UserRole
+from auth.utils.permissions import refresh_token_required
 from auth.services.roles import RoleService
+from auth.services.tokens import TokenService
 from fastapi import status
 from fastapi_jwt_auth import AuthJWT
 from fastapi_jwt_auth.exceptions import AuthJWTException
@@ -111,6 +113,23 @@ async def test_login_user_invalid_credentials(auth_async_client: AsyncClient):
 
         data = response.json()
         assert data['detail'] == 'Invalid login or password'
+
+
+@pytest.mark.anyio
+async def test_logout_user(auth_async_client: AsyncClient):
+    with (
+        patch.object(AuthJWT, 'get_raw_jwt', return_value={
+            'sub': '',
+            'jti': '',
+            'access_jti': ''
+        }),
+        patch.object(TokenService, 'add_tokens_to_invalid', return_value=None),
+        patch.object(AuthJWT, 'jwt_refresh_token_required', return_value=None)
+    ):
+        response = await auth_async_client.post('/users/logout')
+        assert response.status_code == 200
+        data = response.json()
+        assert data
 
 
 @pytest.mark.anyio
