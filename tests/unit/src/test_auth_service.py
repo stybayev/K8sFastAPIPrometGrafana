@@ -7,13 +7,15 @@ import pytest
 from unittest.mock import patch, AsyncMock
 import uuid
 from httpx import AsyncClient
-from auth.models.users import User, Role, UserRole
+from auth.models.users import User, Role, UserRole, LoginHistory
 from auth.utils.permissions import refresh_token_required
 from auth.services.roles import RoleService
 from auth.services.tokens import TokenService
 from fastapi import status
 from fastapi_jwt_auth import AuthJWT
+from typing import List
 from fastapi_jwt_auth.exceptions import AuthJWTException
+from datetime import datetime
 
 
 @pytest.mark.anyio
@@ -130,6 +132,29 @@ async def test_logout_user(auth_async_client: AsyncClient):
         assert response.status_code == 200
         data = response.json()
         assert data
+
+
+@pytest.mark.anyio
+async def test_get_user_history(auth_async_client: AsyncClient, mock_db_session, existing_user: User):
+    user_id = uuid.uuid4()
+    user_history_first = LoginHistory(
+        user_id=user_id,
+        user_agent=''
+    )
+    user_history_second = LoginHistory(
+        user_id=user_id,
+        user_agent=''
+    )
+    user_history_second.login_time = datetime(2024, 1, 1)
+    user_history_first.login_time = datetime(2024, 2, 2)
+    await mock_db_session.commit()
+    with (
+        patch.object(UserService, 'get_login_history', return_value=[user_history_first, user_history_second])
+    ):
+        response = await auth_async_client.get('/users/login/history')
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 2
 
 
 @pytest.mark.anyio
