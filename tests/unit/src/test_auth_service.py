@@ -136,25 +136,41 @@ async def test_logout_user(auth_async_client: AsyncClient):
 
 @pytest.mark.anyio
 async def test_get_user_history(auth_async_client: AsyncClient, mock_db_session, existing_user: User):
-    user_id = uuid.uuid4()
+    user_id = existing_user.id
     user_history_first = LoginHistory(
         user_id=user_id,
-        user_agent=''
+        user_agent='TestAgent1',
     )
+    user_history_first.login_time = datetime(2024, 2, 2)
+
     user_history_second = LoginHistory(
         user_id=user_id,
-        user_agent=''
+        user_agent='TestAgent2',
     )
     user_history_second.login_time = datetime(2024, 1, 1)
-    user_history_first.login_time = datetime(2024, 2, 2)
+
+    # Добавляем объекты в сессию и фиксируем изменения
+    mock_db_session.add(user_history_first)
+    mock_db_session.add(user_history_second)
     await mock_db_session.commit()
-    with (
-        patch.object(UserService, 'get_login_history', return_value=[user_history_first, user_history_second])
-    ):
+
+    history_response = [
+        {
+            "user_agent": user_history_first.user_agent,
+            "login_time": user_history_first.login_time.isoformat()
+        },
+        {
+            "user_agent": user_history_second.user_agent,
+            "login_time": user_history_second.login_time.isoformat()
+        }
+    ]
+
+    with patch.object(UserService, 'get_login_history', return_value=history_response):
         response = await auth_async_client.get('/users/login/history')
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 2
+        assert data == history_response
 
 
 @pytest.mark.anyio
