@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from uuid import UUID
+from datetime import datetime
 
 
 class UserBase(BaseModel):
@@ -27,3 +28,8 @@ class UserLogin(BaseModel):
 class UpdateUserCredentialsRequest(BaseModel):
     login: str
     password: str
+
+
+class LoginHistoryResponse(BaseModel):
+    user_agent: str
+    login_time: datetime
