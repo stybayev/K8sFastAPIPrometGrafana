@@ -5,14 +5,16 @@ from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 import uuid
 from typing import List
-from fastapi import APIRouter, Depends, Path, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Path, HTTPException, Query, status, Request
 
 from auth.schema.tokens import TokenResponse, LoginRequest
-from auth.schema.users import UserResponse, UserCreate, UpdateUserCredentialsRequest
+from auth.schema.users import UserResponse, UserCreate, UpdateUserCredentialsRequest, LoginHistoryResponse
+from auth.models.users import LoginHistory
 
 from fastapi import Depends, HTTPException, status
 
 from auth.services.users import UserService, get_user_service
+from collections.abc import Sequence
 from fastapi_jwt_auth import AuthJWT
 from fastapi_jwt_auth.exceptions import AuthJWTException
 
@@ -48,7 +50,7 @@ async def register_user(user: UserCreate, service: UserService = Depends(get_use
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login_user(user: LoginRequest, service: UserService = Depends(get_user_service),
+async def login_user(user: LoginRequest, request: Request, service: UserService = Depends(get_user_service),
                      Authorize: AuthJWT = Depends()):
     """
     ## Вход пользователя
@@ -64,7 +66,13 @@ async def login_user(user: LoginRequest, service: UserService = Depends(get_user
       - **access_token**: Токен доступа, используемый для авторизации.
       - **refresh_token**: Токен обновления, используемый для получения нового токена доступа.
     """
-    tokens = await service.login(login=user.login, password=user.password, Authorize=Authorize)
+    user_agent = request.headers.get("user-agent")
+    tokens = await service.login(
+        login=user.login,
+        password=user.password,
+        Authorize=Authorize,
+        user_agent=user_agent
+    )
     return tokens
 
 
@@ -143,9 +151,19 @@ async def update_user_credentials(
     )
 
 
-@router.get("/login/history", response_model=List[dict])
-async def get_login_history():
+@router.get("/login/history", response_model=List[LoginHistoryResponse])
+async def get_login_history(
+        service: UserService = Depends(get_user_service),
+        authorize: AuthJWT = Depends()
+):
     """
-    Получение истории входов пользователя
+    ## Получение истории авторизации пользователя в системе
+
+    Endpoint запрашивает историю авторизации пользователя в системе по его идентификатору, указанному в токене
+
+    ### Возвращает:
+      - `user_agent`: устройство, с которого была произведена авторизация
+      - `login_time`: время авторизации
     """
-    pass
+    history = await service.get_login_history(authorize)
+    return history
