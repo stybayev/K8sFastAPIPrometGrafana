@@ -165,10 +165,5 @@ async def get_login_history(
       - `user_agent`: устройство, с которого была произведена авторизация
       - `login_time`: время авторизации
     """
-    history = [
-        LoginHistoryResponse(
-            user_agent=h.user_agent,
-            login_time=h.login_time
-        ) for h in await service.get_login_history(authorize)
-    ]
+    history = await service.get_login_history(authorize)
     return history

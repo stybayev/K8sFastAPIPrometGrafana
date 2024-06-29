@@ -16,8 +16,9 @@ from werkzeug.security import generate_password_hash
 from fastapi_jwt_auth.exceptions import AuthJWTException
 from datetime import datetime
 
+from auth.schema.users import LoginHistoryResponse
 from auth.services.tokens import TokenService
-from auth.utils.permissions import refresh_token_required
+from auth.utils.permissions import refresh_token_required, access_token_required
 
 
 class UserService:
@@ -139,12 +140,17 @@ class UserService:
         await self.token_service.add_tokens_to_invalid(raw_jwt['access_jti'], raw_jwt['jti'], user_id)
         return await self.token_service.generate_tokens(authorize, user_claims, user_id)
 
-    @refresh_token_required
-    async def get_login_history(self, authorize: AuthJWT) -> List[LoginHistory]:
+    @access_token_required
+    async def get_login_history(self, authorize: AuthJWT) -> List[LoginHistoryResponse]:
         user_id = uuid.UUID(authorize.get_jwt_subject())
         result = await self.db_session.execute(select(LoginHistory).where(LoginHistory.user_id == user_id))
         history = result.scalars().all()
-        return history
+        return [
+            LoginHistoryResponse(
+                user_agent=h.user_agent,
+                login_time=h.login_time
+            ) for h in history
+        ]
 
 
 @lru_cache()
