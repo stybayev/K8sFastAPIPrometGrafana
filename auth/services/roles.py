@@ -49,7 +49,7 @@ class RoleService:
                 detail="Either role_id or role_name must be provided"
             )
         result = await self.db_session.execute(select(Role).where(or_(Role.id == role_id, Role.name == role_name)))
-        role_exist = result.scalars().first()
+        role_exist = result.scalar_one_or_none()
 
         if not role_exist:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role not found")

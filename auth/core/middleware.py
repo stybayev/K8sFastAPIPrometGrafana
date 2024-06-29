@@ -10,11 +10,12 @@ redis_client = Redis(host=settings.redis_host, port=settings.redis_port)
 
 
 async def check_blacklist(request: Request, call_next):
+    Authorize = AuthJWT()
     token = request.headers.get("Authorization")
+    refresh_token = request.headers.get("X-Refresh-Token")
     if token:
         try:
             access_token = token[len("Bearer "):]  # Удаление префикса 'Bearer '
-            Authorize = AuthJWT()
             raw_jwt = Authorize.get_raw_jwt(encoded_token=access_token)
             jti = raw_jwt.get('jti')
 
@@ -35,10 +36,8 @@ async def check_blacklist(request: Request, call_next):
                 content={"detail": str(e)}
             )
 
-    refresh_token = request.headers.get("X-Refresh-Token")
     if refresh_token:
         try:
-            Authorize = AuthJWT()
             raw_jwt = Authorize.get_raw_jwt(encoded_token=refresh_token)
             jti = raw_jwt.get('jti')
 

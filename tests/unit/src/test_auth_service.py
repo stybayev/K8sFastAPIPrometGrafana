@@ -1,19 +1,17 @@
-from sqlalchemy.exc import IntegrityError
-
-from werkzeug.security import generate_password_hash
-
-from auth.services.users import UserService
-import pytest
-from unittest.mock import patch, AsyncMock
 import uuid
-from httpx import AsyncClient
-from auth.models.users import User, Role, UserRole
-from auth.utils.permissions import refresh_token_required
-from auth.services.roles import RoleService
-from auth.services.tokens import TokenService
+from unittest.mock import patch
+
+import pytest
 from fastapi import status
 from fastapi_jwt_auth import AuthJWT
-from fastapi_jwt_auth.exceptions import AuthJWTException
+from httpx import AsyncClient
+from sqlalchemy.exc import IntegrityError
+from werkzeug.security import generate_password_hash
+
+from auth.models.users import User, Role, UserRole
+from auth.services.roles import RoleService
+from auth.services.tokens import TokenService
+from auth.services.users import UserService
 
 
 @pytest.mark.anyio

@@ -51,6 +51,7 @@ async def update_role(role_id: UUID, data: RoleUpdateSchema,
     - data: RoleUpdateSchema - Данные для обновления.
     """
     updated_role = await service.update_role(role_id=role_id, data=data, Authorize=Authorize)
+    print(updated_role)
     return RoleResponse.from_orm(updated_role)
 
 
