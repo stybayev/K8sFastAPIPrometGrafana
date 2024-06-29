@@ -2,6 +2,7 @@ import uuid
 from unittest.mock import patch
 
 import pytest
+
 from fastapi import status
 from fastapi_jwt_auth import AuthJWT
 from httpx import AsyncClient
@@ -131,6 +132,35 @@ async def test_logout_user(auth_async_client: AsyncClient):
 
 
 @pytest.mark.anyio
+async def test_refresh_access_token(auth_async_client: AsyncClient):
+    with (
+        patch.object(AuthJWT, 'jwt_refresh_token_required', return_value=None),
+        patch.object(AuthJWT, 'get_raw_jwt', return_value={
+            'sub': 'e0b136b0-8680-47fc-bb9c-abeb1dfeaad1',
+            'jti': '',
+            'access_jti': ''
+        }),
+        patch.object(UserService, 'get_user_roles', return_value=['user']),
+        patch.object(TokenService, 'add_tokens_to_invalid', return_value=None),
+        patch.object(
+            TokenService,
+            'generate_tokens',
+            return_value={
+                'access_token': 'test_access',
+                'refresh_token': 'test_refresh'
+            }
+        )
+    ):
+        response = await auth_async_client.post('/users/token/refresh')
+        assert response.status_code == 200
+        data = response.json()
+        assert data == {
+            'access_token': 'test_access',
+            'refresh_token': 'test_refresh'
+        }
+
+
+@pytest.mark.anyio
 async def test_update_user_credentials_success(auth_async_client: AsyncClient, existing_user: User):
     update_data = {
         'login': 'new_login',
@@ -207,3 +237,42 @@ async def test_assign_role_to_user_unauthorized(auth_async_client: AsyncClient, 
     response = await auth_async_client.post(f'roles/users/{user_id}/roles/{role_id}')
 
     assert response.status_code == 401
+
+
+@pytest.mark.anyio
+async def test_get_user_history(auth_async_client: AsyncClient, mock_db_session, existing_user: User):
+    user_id = existing_user.id
+    user_history_first = LoginHistory(
+        user_id=user_id,
+        user_agent='TestAgent1',
+    )
+    user_history_first.login_time = datetime(2024, 2, 2)
+
+    user_history_second = LoginHistory(
+        user_id=user_id,
+        user_agent='TestAgent2',
+    )
+    user_history_second.login_time = datetime(2024, 1, 1)
+
+    # Добавляем объекты в сессию и фиксируем изменения
+    mock_db_session.add(user_history_first)
+    mock_db_session.add(user_history_second)
+    await mock_db_session.commit()
+
+    history_response = [
+        {
+            "user_agent": user_history_first.user_agent,
+            "login_time": user_history_first.login_time.isoformat()
+        },
+        {
+            "user_agent": user_history_second.user_agent,
+            "login_time": user_history_second.login_time.isoformat()
+        }
+    ]
+
+    with patch.object(UserService, 'get_login_history', return_value=history_response):
+        response = await auth_async_client.get('/users/login/history')
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 2
+        assert data == history_response
