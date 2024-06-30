@@ -1,13 +1,13 @@
 import pytest_asyncio
+from fastapi_jwt_auth import AuthJWT
 from httpx import AsyncClient
 
+from auth.db.postgres import get_db_session
 from auth.db.redis import get_redis
 from auth.main import app as auth_app
 from auth.models.users import User
 from auth.services.users import UserService
-from auth.db.postgres import get_db_session
 from tests.unit.settings import TestJWTSettings
-from fastapi_jwt_auth import AuthJWT
 
 
 @pytest_asyncio.fixture(name='user_service')
@@ -25,9 +25,6 @@ async def fixture_auth_async_client(auth_override_dependencies):
     """
     async with AsyncClient(app=auth_app, base_url='http://localhost/api/v1/auth') as client:
         yield client
-
-
-from auth.core.jwt import JWTSettings
 
 
 @pytest_asyncio.fixture(scope='session')
