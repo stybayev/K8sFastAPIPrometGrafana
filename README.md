@@ -4,9 +4,9 @@
    ```
    git clone git@github.com:stybayev/Auth_sprint_1.git
    ```
-2) Заходим в корневую директрию проекта `/Async_API_sprint_3`:
+2) Заходим в корневую директрию проекта `/Auth_sprint_1`:
    ```
-   cd path/to/Async_API_sprint_3
+   cd path/to/Auth_sprint_1
    ```
 3) Создаем файл `.env` и копируем в него содержимое файла `.env.example`:
    ```
