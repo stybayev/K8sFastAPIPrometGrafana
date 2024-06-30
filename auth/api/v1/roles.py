@@ -1,13 +1,10 @@
 from uuid import UUID
 from auth.schema.roles import RoleSchema, RoleResponse, RoleUpdateSchema, AssignRoleResponse, UserPermissionsSchema
 from auth.services.roles import RoleService, get_role_service
-import uuid
-from typing import List
 from fastapi import APIRouter, Depends, Path, HTTPException, Query, status
 from fastapi import Depends, HTTPException, status
 
 from fastapi_jwt_auth import AuthJWT
-from fastapi_jwt_auth.exceptions import AuthJWTException
 
 router = APIRouter()
 
@@ -51,7 +48,6 @@ async def update_role(role_id: UUID, data: RoleUpdateSchema,
     - data: RoleUpdateSchema - Данные для обновления.
     """
     updated_role = await service.update_role(role_id=role_id, data=data, Authorize=Authorize)
-    print(updated_role)
     return RoleResponse.from_orm(updated_role)
 
 
@@ -114,7 +110,6 @@ async def check_user_permissions(user_id: UUID = Path(..., description="User ID"
     """
     result = await service.get_user_permissions(user_id=user_id)
     return result
-
 
 # @router.post("/logout/others", response_model=dict)
 # async def logout_other_sessions():

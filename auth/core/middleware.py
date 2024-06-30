@@ -1,4 +1,3 @@
-# middleware.py
 from fastapi import Request, Response, status
 from fastapi.responses import JSONResponse
 from fastapi_jwt_auth import AuthJWT

@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 from unittest.mock import patch
 
 import pytest
@@ -9,7 +10,7 @@ from httpx import AsyncClient
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash
 
-from auth.models.users import User, Role, UserRole
+from auth.models.users import User, Role, UserRole, LoginHistory
 from auth.services.roles import RoleService
 from auth.services.tokens import TokenService
 from auth.services.users import UserService
