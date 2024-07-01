@@ -4,7 +4,7 @@ from typing import List
 from fastapi import Depends, HTTPException, status
 from fastapi_jwt_auth import AuthJWT
 from redis.asyncio import Redis
-from sqlalchemy import delete, or_, update, and_
+from sqlalchemy import and_, delete, or_, update
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -12,8 +12,9 @@ from sqlalchemy.orm import selectinload
 
 from auth.db.postgres import get_db_session
 from auth.db.redis import get_redis
-from auth.models.users import Role, UserRole, User
-from auth.schema.roles import RoleSchema, RoleResponse, RoleUpdateSchema, UserPermissionsSchema
+from auth.models.users import Role, User, UserRole
+from auth.schema.roles import (RoleResponse, RoleSchema, RoleUpdateSchema,
+                               UserPermissionsSchema)
 from auth.utils.permissions import admin_required
 
 

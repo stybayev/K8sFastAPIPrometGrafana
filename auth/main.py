@@ -1,14 +1,12 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request, Response, status
+from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 from fastapi_jwt_auth import AuthJWT
-from fastapi_jwt_auth.exceptions import AuthJWTException, JWTDecodeError
+from fastapi_jwt_auth.exceptions import AuthJWTException
 from redis.asyncio import Redis
-from starlette.middleware.base import RequestResponseEndpoint
-from starlette.responses import JSONResponse
 
-from auth.api.v1 import users, roles
+from auth.api.v1 import roles, users
 from auth.core.config import settings
 from auth.core.jwt import JWTSettings
 from auth.core.middleware import check_blacklist
