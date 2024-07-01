@@ -67,6 +67,9 @@ curl -XPUT http://${host}:${port}/movies -H 'Content-Type: application/json' -d'
       "file": {
         "type": "text"
       },
+      "label": {
+        "type": "text"
+      },
       "genre": {
         "type": "keyword"
       },
