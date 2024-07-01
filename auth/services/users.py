@@ -141,9 +141,18 @@ class UserService:
         return await self.token_service.generate_tokens(authorize, user_claims, user_id)
 
     @access_token_required
-    async def get_login_history(self, authorize: AuthJWT) -> List[LoginHistoryResponse]:
+    async def get_login_history(self, authorize: AuthJWT, page_size: int, page_number: int) -> List[
+        LoginHistoryResponse]:
         user_id = uuid.UUID(authorize.get_jwt_subject())
-        result = await self.db_session.execute(select(LoginHistory).where(LoginHistory.user_id == user_id))
+        offset = (page_number - 1) * page_size
+
+        result = await self.db_session.execute(
+            select(LoginHistory)
+            .where(LoginHistory.user_id == user_id)
+            .order_by(LoginHistory.login_time.desc())
+            .limit(page_size)
+            .offset(offset)
+        )
         history = result.scalars().all()
         return [
             LoginHistoryResponse(

@@ -38,14 +38,13 @@ def refresh_token_required(func):
 
 def access_token_required(func):
     @wraps(func)
-    async def wrapper(self, *args, **kwargs):
+    async def wrapper(self, authorize: AuthJWT, *args, **kwargs):
         try:
-            authorize = kwargs.get('authorize') or args[0]
             authorize.jwt_required()
         except AuthJWTException:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail='Invalid access token'
             )
-        return await func(self, *args, **kwargs)
+        return await func(self, authorize, *args, **kwargs)
     return wrapper
