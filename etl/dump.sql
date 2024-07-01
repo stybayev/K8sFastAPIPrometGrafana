@@ -125,6 +125,7 @@ CREATE TABLE content.film_work (
     rating double precision,
     type text NOT NULL,
     file text NUll,
+    label text NUll,
     created timestamp with time zone,
     modified timestamp with time zone
 );

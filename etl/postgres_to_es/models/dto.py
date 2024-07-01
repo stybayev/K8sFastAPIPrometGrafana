@@ -23,6 +23,7 @@ class Filmwork(BaseModel):
     imdb_rating: float | None
     title: str
     file: str | None
+    label: str | None
     description: str | None
     genre: list[str] = field(default_factory=list)
     director: dict = field(default_factory=dict)

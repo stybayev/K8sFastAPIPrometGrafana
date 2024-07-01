@@ -11,7 +11,8 @@ class Film(BaseFilm):
     director: Optional[dict] = {}
     actors: List[Actor]
     writers: List[Writer]
-    file: Optional[str] = None
+    file: str | None = None
+    label: str | None = None
 
 
 class Films(BaseFilm, PaginatedParams):
