@@ -47,7 +47,7 @@ def upgrade() -> None:
                     sa.Column('user_id', sa.UUID(), nullable=False),
                     sa.Column('user_agent', sa.String(length=255), nullable=True),
                     sa.Column('login_time', sa.DateTime(), nullable=True),
-                    sa.ForeignKeyConstraint(['user_id'], ['auth.users.id'], ),
+                    sa.ForeignKeyConstraint(['user_id'], ['auth.users.id'], ondelete='CASCADE'),
                     sa.PrimaryKeyConstraint('id'),
                     sa.UniqueConstraint('id'),
                     schema='auth'
@@ -56,8 +56,8 @@ def upgrade() -> None:
                     sa.Column('id', sa.UUID(), nullable=False),
                     sa.Column('user_id', sa.UUID(), nullable=False),
                     sa.Column('role_id', sa.UUID(), nullable=False),
-                    sa.ForeignKeyConstraint(['role_id'], ['auth.roles.id'], ),
-                    sa.ForeignKeyConstraint(['user_id'], ['auth.users.id'], ),
+                    sa.ForeignKeyConstraint(['role_id'], ['auth.roles.id']),
+                    sa.ForeignKeyConstraint(['user_id'], ['auth.users.id']),
                     sa.PrimaryKeyConstraint('id', 'user_id', 'role_id'),
                     sa.UniqueConstraint('id'),
                     schema='auth'

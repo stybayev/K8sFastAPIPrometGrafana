@@ -3,7 +3,7 @@ from datetime import datetime
 
 from sqlalchemy import Column, String, DateTime, Index, ForeignKey, ARRAY
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from auth.db.postgres import Base
@@ -33,8 +33,8 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     roles = relationship('Role', secondary='auth.user_roles', back_populates='users')
+    login_history = relationship('LoginHistory', cascade='all, delete-orphan', backref='user', lazy='dynamic')
 
-    Index('idx_user_login', 'login', unique=True)
 
     def __init__(self, login: str, password: str, first_name: str, last_name: str) -> None:
         self.login = login
@@ -60,8 +60,6 @@ class Role(Base):
 
     users = relationship('User', secondary='auth.user_roles', back_populates='roles')
 
-    Index('idx_role_name', 'name', unique=True)
-
     def __init__(self, name: str, description: str = None, permissions: list = None):
         self.name = name
         self.description = description
@@ -76,7 +74,7 @@ class LoginHistory(Base):
     __table_args__ = {'schema': 'auth'}
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True)
-    user_id = Column(UUID(as_uuid=True), ForeignKey('auth.users.id'), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey('auth.users.id', ondelete="CASCADE"), nullable=False)
     user_agent = Column(String(255), nullable=True)
     login_time = Column(DateTime, default=datetime.utcnow)
 
