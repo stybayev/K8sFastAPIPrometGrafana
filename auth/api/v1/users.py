@@ -10,6 +10,8 @@ from auth.schema.users import (LoginHistoryResponse,
                                UserResponse)
 from auth.services.users import UserService, get_user_service
 
+from auth.utils.pagination import PaginatedParams
+
 router = APIRouter()
 
 
@@ -146,7 +148,9 @@ async def update_user_credentials(
 @router.get("/login/history", response_model=List[LoginHistoryResponse])
 async def get_login_history(
         service: UserService = Depends(get_user_service),
-        authorize: AuthJWT = Depends()
+        authorize: AuthJWT = Depends(),
+        page_size: int = PaginatedParams.page_size,
+        page_number: int = PaginatedParams.page_number
 ):
     """
     ## Получение истории авторизации пользователя в системе
@@ -157,5 +161,5 @@ async def get_login_history(
       - `user_agent`: устройство, с которого была произведена авторизация
       - `login_time`: время авторизации
     """
-    history = await service.get_login_history(authorize)
+    history = await service.get_login_history(authorize, page_size=page_size, page_number=page_number)
     return history
