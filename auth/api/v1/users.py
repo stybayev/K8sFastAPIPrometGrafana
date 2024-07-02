@@ -1,22 +1,14 @@
 import uuid
-import datetime
-
-from sqlalchemy.future import select
-from sqlalchemy.ext.asyncio import AsyncSession
-import uuid
 from typing import List
-from fastapi import APIRouter, Depends, Path, HTTPException, Query, status, Request
 
-from auth.schema.tokens import TokenResponse, LoginRequest
-from auth.schema.users import UserResponse, UserCreate, UpdateUserCredentialsRequest, LoginHistoryResponse
-from auth.models.users import LoginHistory
-
-from fastapi import Depends, HTTPException, status
-
-from auth.services.users import UserService, get_user_service
-from collections.abc import Sequence
+from fastapi import APIRouter, Depends, Request, status
 from fastapi_jwt_auth import AuthJWT
-from fastapi_jwt_auth.exceptions import AuthJWTException
+
+from auth.schema.tokens import LoginRequest, TokenResponse
+from auth.schema.users import (LoginHistoryResponse,
+                               UpdateUserCredentialsRequest, UserCreate,
+                               UserResponse)
+from auth.services.users import UserService, get_user_service
 
 from auth.utils.pagination import PaginatedParams
 

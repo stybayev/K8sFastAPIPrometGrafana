@@ -1,10 +1,12 @@
 import datetime
+import uuid
+from uuid import UUID
+
 from fastapi_jwt_auth import AuthJWT
+from redis.asyncio import Redis
+
 from auth.core.config import settings
 from auth.schema.tokens import TokenResponse
-from redis.asyncio import Redis
-from uuid import UUID
-import uuid
 
 
 class TokenService:

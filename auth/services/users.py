@@ -1,24 +1,26 @@
 import uuid
-from sqlalchemy import insert
-from sqlalchemy.future import select
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import IntegrityError
+from datetime import datetime
 from functools import lru_cache
-from typing import Optional, List
+from typing import List, Optional
+
 from fastapi import Depends, HTTPException, status
+from fastapi_jwt_auth import AuthJWT
+from fastapi_jwt_auth.exceptions import AuthJWTException
+from redis.asyncio import Redis
+from sqlalchemy import insert
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from werkzeug.security import generate_password_hash
+
 from auth.db.postgres import get_db_session
 from auth.db.redis import get_redis
-from auth.models.users import User, UserRole, Role, LoginHistory
+from auth.models.users import LoginHistory, Role, User, UserRole
 from auth.schema.tokens import TokenResponse
-from fastapi_jwt_auth import AuthJWT
-from redis.asyncio import Redis
-from werkzeug.security import generate_password_hash
-from fastapi_jwt_auth.exceptions import AuthJWTException
-from datetime import datetime
-
 from auth.schema.users import LoginHistoryResponse
 from auth.services.tokens import TokenService
-from auth.utils.permissions import refresh_token_required, access_token_required
+from auth.utils.permissions import (access_token_required,
+                                    refresh_token_required)
 
 
 class UserService:

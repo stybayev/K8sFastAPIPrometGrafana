@@ -1,4 +1,5 @@
 from pydantic import BaseSettings
+
 from auth.core.config import settings
 
 
