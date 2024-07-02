@@ -1,4 +1,5 @@
 from functools import wraps
+
 from fastapi import HTTPException, status
 from fastapi_jwt_auth import AuthJWT
 from fastapi_jwt_auth.exceptions import AuthJWTException

@@ -1,10 +1,11 @@
-import typer
-import psycopg2
-import os
 import logging
+import os
 from datetime import datetime
-from dotenv import load_dotenv
 from uuid import uuid4
+
+import psycopg2
+import typer
+from dotenv import load_dotenv
 from psycopg2.extras import DictCursor
 from werkzeug.security import generate_password_hash
 
