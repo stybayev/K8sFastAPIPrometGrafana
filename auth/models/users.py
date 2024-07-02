@@ -78,8 +78,6 @@ class LoginHistory(Base):
     user_agent = Column(String(255), nullable=True)
     login_time = Column(DateTime, default=datetime.utcnow)
 
-    Index('idx_login_history_user', 'user_id')
-
     def __init__(self, user_id: uuid.UUID, user_agent: str = None):
         self.user_id = user_id
         self.user_agent = user_agent
