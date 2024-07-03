@@ -7,12 +7,16 @@ import psycopg2
 import typer
 from dotenv import load_dotenv
 from psycopg2.extras import DictCursor
+from typing_extensions import Annotated
 from werkzeug.security import generate_password_hash
 
 load_dotenv()
 
 
-def create_su(login: str, psw: str):
+def create_su(
+        login: Annotated[str, typer.Argument()],
+        psw: Annotated[str, typer.Argument()]
+):
     dsl = {
         'dbname': os.getenv('POSTGRES_DB'),
         'user': os.getenv('POSTGRES_USER'),
@@ -27,8 +31,8 @@ def create_su(login: str, psw: str):
         id_role = uuid4()
         try:
             query = (
-                "INSERT INTO auth.roles (id, name, permissions) "
-                "VALUES ('" + str(id_role) + "', 'admin', '{admin}')"
+                    "INSERT INTO auth.roles (id, name, permissions) "
+                    "VALUES ('" + str(id_role) + "', 'admin', '{admin}')"
             )
             cursor.execute(query)
             pg_conn.commit()
@@ -53,4 +57,3 @@ def create_su(login: str, psw: str):
 
 
 typer.run(create_su)
-
