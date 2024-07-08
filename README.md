@@ -2,11 +2,11 @@
 
 1) Клонируем репозиторий:
    ```
-   git clone git@github.com:stybayev/Auth_sprint_1.git
+   git clone git@github.com:stybayev/Auth_sprint_2.git
    ```
-2) Заходим в корневую директрию проекта `/Auth_sprint_1`:
+2) Заходим в корневую директрию проекта `/Auth_sprint_2`:
    ```
-   cd Auth_sprint_1
+   cd Auth_sprint_2
    ```
 3) Создаем файл `.env` и копируем в него содержимое файла `.env.example`:
    ```
