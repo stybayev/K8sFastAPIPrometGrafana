@@ -35,8 +35,6 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# app.middleware("http")(check_blacklist)
-
 app.include_router(films.router, prefix="/api/v1/films", tags=["films"])
 app.include_router(genres.router, prefix="/api/v1/genres", tags=["genres"])
 app.include_router(persons.router, prefix="/api/v1/persons", tags=["persons"])
