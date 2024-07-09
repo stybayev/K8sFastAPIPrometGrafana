@@ -11,6 +11,7 @@ from app.api.v1 import films, genres, persons
 from app.core.config import settings
 from app.db import elastic, redis
 from app.dependencies.main import setup_dependencies
+from auth.core.middleware import check_blacklist
 
 
 @asynccontextmanager
@@ -33,6 +34,8 @@ app = FastAPI(
     default_response_class=ORJSONResponse,
     lifespan=lifespan
 )
+
+# app.middleware("http")(check_blacklist)
 
 app.include_router(films.router, prefix="/api/v1/films", tags=["films"])
 app.include_router(genres.router, prefix="/api/v1/genres", tags=["genres"])

@@ -6,6 +6,9 @@ from app.models.film import Film, Films
 from app.models.base_model import SearchParams
 from app.utils.dc_objects import PaginatedParams
 from uuid import UUID
+from fastapi_jwt_auth import AuthJWT
+
+from auth.core.jwt import security_jwt
 
 router = APIRouter()
 
@@ -13,6 +16,8 @@ router = APIRouter()
 @router.get("/{film_id}", response_model=Film)
 async def get_film(
         *,
+        authorize: AuthJWT = Depends(),
+        user: dict = Depends(security_jwt),
         service: FilmServiceABC = Depends(),
         film_id: UUID = Path(..., description="film id")
 ) -> Film or None:

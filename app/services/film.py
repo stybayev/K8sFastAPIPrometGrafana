@@ -8,6 +8,8 @@ from uuid import UUID
 from app.services.base import RepositoryElastic, RepositoryRedis
 from typing import List
 
+from auth.services.tokens import TokenService
+
 
 class FilmRepository(RepositoryElastic[Film, Films]):
     ...
@@ -34,10 +36,12 @@ class FilmService(FilmServiceABC):
     def __init__(
             self,
             repository: FilmRepository,
-            cache_repository: FilmCacheRepository
+            cache_repository: FilmCacheRepository,
+            token_service: TokenService
     ) -> None:
         self._repository = repository
         self.cache_repository = cache_repository
+        self.token_service = token_service
 
     async def get_by_id(self, doc_id: UUID) -> Film or None:
         """
