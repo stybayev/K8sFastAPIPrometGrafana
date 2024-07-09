@@ -4,6 +4,7 @@ from typing import List
 from fastapi import APIRouter, Depends, Request, status
 from fastapi_jwt_auth import AuthJWT
 
+from auth.core.jwt import security_jwt
 from auth.schema.tokens import LoginRequest, TokenResponse
 from auth.schema.users import (LoginHistoryResponse,
                                UpdateUserCredentialsRequest, UserCreate,
@@ -73,7 +74,8 @@ async def login_user(user: LoginRequest, request: Request, service: UserService 
 @router.post("/token/refresh", response_model=TokenResponse)
 async def refresh_access_token(
         service: UserService = Depends(get_user_service),
-        authorize: AuthJWT = Depends()
+        authorize: AuthJWT = Depends(),
+        user: dict = Depends(security_jwt),
 ):
     """
     ## Обновление Access токена
@@ -92,7 +94,8 @@ async def refresh_access_token(
 @router.post("/logout", response_model=bool)
 async def logout_user(
         service: UserService = Depends(get_user_service),
-        authorize: AuthJWT = Depends()
+        authorize: AuthJWT = Depends(),
+        user: dict = Depends(security_jwt),
 ):
     """
     ## Выход пользователя из аккаунта
@@ -111,7 +114,8 @@ async def logout_user(
 async def update_user_credentials(
         user_credentials: UpdateUserCredentialsRequest,
         service: UserService = Depends(get_user_service),
-        Authorize: AuthJWT = Depends()
+        Authorize: AuthJWT = Depends(),
+        user: dict = Depends(security_jwt),
 ):
     """
     ## Обновление данных пользователя
@@ -147,8 +151,9 @@ async def update_user_credentials(
 
 @router.get("/login/history", response_model=List[LoginHistoryResponse])
 async def get_login_history(
-        service: UserService = Depends(get_user_service),
         authorize: AuthJWT = Depends(),
+        user: dict = Depends(security_jwt),
+        service: UserService = Depends(get_user_service),
         page_size: int = PaginatedParams.page_size,
         page_number: int = PaginatedParams.page_number
 ):
