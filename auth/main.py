@@ -19,9 +19,6 @@ async def lifespan(app: FastAPI):
     AuthJWT.load_config(lambda: JWTSettings())
     redis.connection = Redis(host=settings.redis_host, port=settings.redis_port)
 
-    # TODO: создание БД реализован через alembic, но строку оставлю пака на всякий пожарный
-    # await create_database()
-
     yield
 
     await redis.connection.close()

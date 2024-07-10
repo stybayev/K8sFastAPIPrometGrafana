@@ -1,6 +1,3 @@
-import uvicorn
-import logging
-
 from elasticsearch import AsyncElasticsearch
 from fastapi.responses import ORJSONResponse
 from fastapi import FastAPI
@@ -11,11 +8,16 @@ from app.api.v1 import films, genres, persons
 from app.core.config import settings
 from app.db import elastic, redis
 from app.dependencies.main import setup_dependencies
+
+from auth.core.jwt import JWTSettings
+from fastapi_jwt_auth import AuthJWT
+
 from auth.core.middleware import check_blacklist
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    AuthJWT.load_config(lambda: JWTSettings())
     redis.redis = Redis(host=settings.redis_host, port=settings.redis_port)
     elastic.es = AsyncElasticsearch(
         hosts=[f'http://{settings.elastic_host}:{settings.elastic_port}']
@@ -34,6 +36,8 @@ app = FastAPI(
     default_response_class=ORJSONResponse,
     lifespan=lifespan
 )
+
+app.middleware("http")(check_blacklist)
 
 app.include_router(films.router, prefix="/api/v1/films", tags=["films"])
 app.include_router(genres.router, prefix="/api/v1/genres", tags=["genres"])
