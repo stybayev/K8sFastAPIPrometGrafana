@@ -70,6 +70,7 @@ async def get_film(
     ### Возвращает:
     - Объект фильма с подробной информацией.
     - Если фильм не найден, возвращает ошибку `404 Not Found`.
+    - Если у пользователя нет прав доступа к этому фильму, возвращает ошибку `403 Forbidden`.
     """
     user_roles = authorize.get_raw_jwt().get('roles', [])
     film = await service.get_by_id(doc_id=film_id, user_roles=user_roles)
