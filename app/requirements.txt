@@ -35,3 +35,6 @@ django-cors-headers==4.3.1
 requests~=2.31.0
 fastapi_jwt_auth==0.5.0
 python-jose==3.3.0
+sqlalchemy==2.0.30
+asyncpg==0.29.0
+Werkzeug==3.0.3

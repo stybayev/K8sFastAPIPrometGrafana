@@ -22,7 +22,7 @@ async def get_films(
         sort: str | None = "-imdb_rating",
         genre: str | None = Query(None, description="Filter by Genre"),
         page_size: int = PaginatedParams.page_size,
-        page_number: int = PaginatedParams.page_number
+        page_number: int = PaginatedParams.page_number,
 ) -> List[Films]:
     """
     ## Получение списка фильмов
@@ -38,6 +38,7 @@ async def get_films(
     ### Возвращает:
     - Список фильмов с информацией о каждом фильме.
     """
+
     films = await service.get_films(
         params=SearchParams(
             sort=sort,
@@ -46,6 +47,7 @@ async def get_films(
             page_number=page_number
         )
     )
+
     return films
 
 
@@ -69,7 +71,8 @@ async def get_film(
     - Объект фильма с подробной информацией.
     - Если фильм не найден, возвращает ошибку `404 Not Found`.
     """
-    film = await service.get_by_id(doc_id=film_id)
+    user_roles = authorize.get_raw_jwt().get('roles', [])
+    film = await service.get_by_id(doc_id=film_id, user_roles=user_roles)
     if not film:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,

@@ -1,3 +1,6 @@
+from http import HTTPStatus
+from fastapi import HTTPException
+
 import orjson
 
 from abc import ABC, abstractmethod
@@ -21,7 +24,7 @@ class FilmCacheRepository(RepositoryRedis[Film, Films]):
 
 class FilmServiceABC(ABC):
     @abstractmethod
-    async def get_by_id(self, doc_id: UUID) -> Film or None:
+    async def get_by_id(self, doc_id: UUID, user_roles: List[str]) -> Film or None:
         ...
 
     @abstractmethod
@@ -43,7 +46,8 @@ class FilmService(FilmServiceABC):
         self.cache_repository = cache_repository
         self.token_service = token_service
 
-    async def get_by_id(self, doc_id: UUID) -> Film or None:
+    async def get_by_id(self, doc_id: UUID,
+                        user_roles: List[str]) -> Film | None:
         """
         Функция получения фильма по его идентификатору
         :param doc_id: идентификатор фильма
@@ -58,6 +62,13 @@ class FilmService(FilmServiceABC):
                 return None
             # сохраняем запись в кеш
             await self.cache_repository.put(entity=entity)
+
+        # проверяем права доступа
+        if entity.label and entity.label not in user_roles:
+            raise HTTPException(
+                status_code=HTTPStatus.FORBIDDEN,
+                detail='You do not have the required permissions'
+            )
 
         return entity
 
