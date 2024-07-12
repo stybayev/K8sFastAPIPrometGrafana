@@ -9,6 +9,7 @@ from app.dependencies.registrator import add_factory_to_mapper
 from app.models.film import Film, Films
 from app.services.film import (FilmService, FilmRepository,
                                FilmServiceABC, FilmCacheRepository)
+from auth.services.tokens import TokenService
 
 
 @add_factory_to_mapper(FilmServiceABC)
@@ -29,5 +30,6 @@ def create_film_service(
             paginated_model=Films,
             redis=redis_session,
             index="movies"
-        )
+        ),
+        token_service=TokenService(redis_session)
     )

@@ -2,6 +2,7 @@ import pytest_asyncio
 from fastapi_jwt_auth import AuthJWT
 from httpx import AsyncClient
 
+from auth.core.jwt import security_jwt
 from auth.db.postgres import get_db_session
 from auth.db.redis import get_redis
 from auth.main import app as auth_app
@@ -38,6 +39,7 @@ def fixture_auth_override_dependencies(mock_db_session, mock_redis_client, authj
     auth_app.dependency_overrides[get_db_session] = lambda: mock_db_session
     auth_app.dependency_overrides[get_redis] = lambda: mock_redis_client
     auth_app.dependency_overrides[AuthJWT] = lambda: authjwt
+    auth_app.dependency_overrides[security_jwt] = lambda: {"id": "test_user_id", "roles": ["user"]}
 
     yield
     auth_app.dependency_overrides = {}
