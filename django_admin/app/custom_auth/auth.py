@@ -15,6 +15,15 @@ from custom_auth.enums import Roles
 
 
 class CustomBackend(BaseBackend):
+
+    def decoded_token(self, access_token):
+        try:
+            decoded_token = jwt.decode(access_token, options={"verify_signature": False})
+            return decoded_token
+        except Exception as e:
+            logging.info(e)
+            return None
+
     def authenticate(self, request, username=None, password=None):
         payload = {'login': username, 'password': password}
         url = settings.AUTH_API_LOGIN_URL
@@ -27,15 +36,11 @@ class CustomBackend(BaseBackend):
         access_token = data.get('access_token')
 
         # Декодирование access токена
-        try:
-            decoded_token = jwt.decode(access_token, options={"verify_signature": False})
-            user_id = decoded_token.get('id')
-            first_name = decoded_token.get('first_name')
-            last_name = decoded_token.get('last_name')
-            roles = decoded_token.get('roles')
-        except Exception as e:
-            logging.info(e)
-            return None
+        decoded_token = self.decoded_token(access_token=access_token)
+        user_id = decoded_token.get('id')
+        first_name = decoded_token.get('first_name')
+        last_name = decoded_token.get('last_name')
+        roles = decoded_token.get('roles')
 
         try:
             user, created = User.objects.get_or_create(id=user_id, )

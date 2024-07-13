@@ -9,7 +9,7 @@ class MyUserManager(BaseUserManager):
         if not login:
             raise ValueError('Users must have an email address')
 
-        user = self.model(email=self.normalize_email(login))
+        user = self.model(login=self.normalize_email(login))
         user.set_password(password)
         user.save(using=self._db)
         return user
