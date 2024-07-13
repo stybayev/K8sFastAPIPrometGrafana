@@ -108,7 +108,6 @@ services:
 
   db:
     image: ghcr.io/dbsystel/postgresql-partman:14
-#    image: logicwind/postgres-partman-cron:14
     container_name: db
     shm_size: 1g
     <<: *app
@@ -118,9 +117,11 @@ services:
       - ${POSTGRES_PORT}:5432
     env_file:
       - .env
+    user: root
     volumes:
       - dbdata:/var/lib/postgresql/data
       - ./etl/dump.sql:/docker-entrypoint-initdb.d/dump.sql
+      - ./alembic/postgresql.conf:/opt/bitnami/postgresql/conf/postgresql.conf
 
   redis:
     image: redis:alpine

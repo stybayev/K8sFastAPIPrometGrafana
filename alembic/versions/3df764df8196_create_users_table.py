@@ -20,11 +20,9 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     op.execute("CREATE SCHEMA IF NOT EXISTS auth")
-    op.execute("CREATE SCHEMA IF NOT EXISTS partman")
-    op.execute("CREATE EXTENSION pg_partman SCHEMA partman")
-    # op.execute('CREATE EXTENSION pg_cron')
+    # op.execute("CREATE SCHEMA IF NOT EXISTS partman")
+    # op.execute("CREATE EXTENSION IF NOT EXISTS pg_partman SCHEMA partman")
     # op.execute("ALTER SYSTEM set shared_preload_libraries = 'pg_partman_bgw'")
-    # op.execute('systemctl restart')
 
     op.create_table(
         "roles",
@@ -72,9 +70,7 @@ def upgrade() -> None:
         """UPDATE partman.part_config SET retention = '12 month', retention_keep_table=false
         WHERE parent_table = 'auth.login_history'""",
     )
-    op.execute(
-        """SELECT cron.schedule('0 0 1 * *', $$SELECT partman.run_maintenance();$$)""",
-    )
+
     op.create_table(
         "user_roles",
         sa.Column("id", sa.UUID(), nullable=False),
