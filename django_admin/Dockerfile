@@ -19,8 +19,11 @@ COPY app/uwsgi/uwsgi.ini uwsgi.ini
 RUN apt-get update && apt-get install netcat-traditional && python -m pip install --upgrade pip && pip install -r requirements.txt --no-cache
 COPY app/ .
 
-RUN chmod +x docker-entrypoint.sh  && mkdir /opt/app/static && mkdir /opt/app/uploads
+RUN chmod +x docker-entrypoint.sh  && mkdir -p /opt/app/static && mkdir -p /opt/app/uploads
 
+# Установка прав доступа на все файлы и директории
+RUN chown -R django:django /opt/app
+RUN chmod -R 755 /opt/app
 
 EXPOSE 8001
 

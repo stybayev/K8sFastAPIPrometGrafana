@@ -35,6 +35,7 @@ AWS_S3_ENDPOINT_URL = os.environ.get("MINIO_HOST")
 FILE_SERVICE_URL = os.environ.get("FILE_SERVICE_URL")
 
 include("components/apps.py")
+include("components/constants.py")
 include("components/database.py")
 include("components/templates.py")
 include("components/validators.py")
