@@ -20,9 +20,8 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     op.execute("CREATE SCHEMA IF NOT EXISTS auth")
-    # op.execute("CREATE SCHEMA IF NOT EXISTS partman")
-    # op.execute("CREATE EXTENSION IF NOT EXISTS pg_partman SCHEMA partman")
-    # op.execute("ALTER SYSTEM set shared_preload_libraries = 'pg_partman_bgw'")
+    op.execute("CREATE SCHEMA IF NOT EXISTS partman")
+    op.execute("CREATE EXTENSION IF NOT EXISTS pg_partman SCHEMA partman")
 
     op.create_table(
         "roles",
