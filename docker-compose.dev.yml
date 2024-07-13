@@ -81,7 +81,7 @@ services:
     depends_on:
       - minio
       - db
-    
+
   etl:
     container_name: etl
     build: ./etl/postgres_to_es
@@ -107,7 +107,8 @@ services:
       - esdata:/usr/share/elasticsearch/data
 
   db:
-    image: postgis/postgis:14-master
+    image: ghcr.io/dbsystel/postgresql-partman:14
+#    image: logicwind/postgres-partman-cron:14
     container_name: db
     shm_size: 1g
     <<: *app
