@@ -121,7 +121,7 @@ services:
     volumes:
       - dbdata:/var/lib/postgresql/data
       - ./etl/dump.sql:/docker-entrypoint-initdb.d/dump.sql
-      - ./alembic/postgresql.conf:/opt/bitnami/postgresql/conf/postgresql.conf
+      # - ./alembic/postgresql.conf:/opt/bitnami/postgresql/conf/postgresql.conf
 
   redis:
     image: redis:alpine
