@@ -21,7 +21,7 @@ SET row_security = off;
 --
 
 CREATE SCHEMA IF NOT EXISTS content;
-
+CREATE SCHEMA IF NOT EXISTS partman;
 
 ALTER SCHEMA content OWNER TO postgres;
 
@@ -60,6 +60,12 @@ COMMENT ON SCHEMA topology IS 'PostGIS Topology schema';
 CREATE EXTENSION IF NOT EXISTS fuzzystrmatch WITH SCHEMA public;
 
 
+--
+-- Name: partman; Type: EXTENSION; Schema: partman; Owner: -
+--
+
+CREATE EXTENSION IF NOT EXISTS pg_partman WITH SCHEMA partman;
+ALTER SYSTEM set shared_preload_libraries = 'pg_partman_bgw';
 --
 -- Name: EXTENSION fuzzystrmatch; Type: COMMENT; Schema: -; Owner:
 --
