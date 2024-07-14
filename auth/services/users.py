@@ -96,7 +96,10 @@ class UserService:
             )
 
         roles = await self.get_user_roles(db_user.id)
-        user_claims = {"id": str(db_user.id), "roles": roles}
+        user_claims = {"id": str(db_user.id),
+                       "roles": roles,
+                       "first_name": str(db_user.first_name),
+                       "last_name": str(db_user.last_name)}
         self.db_session.add(
             LoginHistory(user_id=db_user.id, user_agent=user_agent),
         )
