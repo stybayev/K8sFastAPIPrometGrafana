@@ -72,7 +72,11 @@ class UserService:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid login or password')
 
         roles = await self.get_user_roles(db_user.id)
-        user_claims = {'id': str(db_user.id), 'roles': roles}
+
+        user_claims = {'id': str(db_user.id), 'roles': roles,
+                       'first_name': str(db_user.first_name),
+                       'last_name': str(db_user.last_name)}
+
         await self.db_session.execute(
             insert(LoginHistory).values(
                 user_id=str(db_user.id),

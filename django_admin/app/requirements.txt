@@ -10,5 +10,6 @@ uwsgi
 djangorestframework==3.14.0
 django-storages==1.14.2
 boto3==1.34.2
+PyJWT==2.8.0
 
 requests~=2.31.0
