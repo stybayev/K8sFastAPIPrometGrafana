@@ -6,7 +6,7 @@ from fastapi_jwt_auth import AuthJWT
 from fastapi_jwt_auth.exceptions import AuthJWTException
 from redis.asyncio import Redis
 
-from auth.api.v1 import roles, users
+from auth.api.v1 import roles, users, social
 from auth.core.config import settings
 from auth.core.jwt import JWTSettings
 from auth.core.middleware import check_blacklist
@@ -39,3 +39,4 @@ app.middleware("http")(check_blacklist)
 
 app.include_router(users.router, prefix='/api/v1/auth/users', tags=['users'])
 app.include_router(roles.router, prefix='/api/v1/auth/roles', tags=['roles'])
+app.include_router(social.router, prefix='/api/v1/auth/social', tags=['social'])

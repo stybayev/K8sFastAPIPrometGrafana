@@ -21,6 +21,13 @@ class DataBaseSettings(BaseSettings):
         return f'postgresql+asyncpg://{self.user}:{self.password}@{self.host}:{self.port}/{self.db}'
 
 
+class OAuthSettings(BaseSettings):
+    yandex_client_id: str = Field(..., env='YANDEX_CLIENT_ID')
+    yandex_client_secret: str = Field(..., env='YANDEX_CLIENT_SECRET')
+    yandex_redirect_uri: str = Field(..., env='YANDEX_REDIRECT_URI')
+    yandex_final_redirect_uri: str = Field(..., env='YANDEX_FINAL_REDIRECT_URI')
+
+
 class Settings(BaseSettings):
     # App
     project_name: str = Field(default='Auth API', env='File API')
@@ -40,6 +47,9 @@ class Settings(BaseSettings):
     ALGORITHM: str = Field(default='HS256', env='ALGORITHM')
     ACCESS_TOKEN_EXPIRES: int = Field(default=30, env='ACCESS_TOKEN_EXPIRES')
     REFRESH_TOKEN_EXPIRES: int = Field(default=1440, env='REFRESH_TOKEN_EXPIRES')
+
+    # OAuth
+    oauth: OAuthSettings = OAuthSettings()
 
     class Config:
         env_file = '.env'
