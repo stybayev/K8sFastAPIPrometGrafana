@@ -5,12 +5,14 @@ from typing import List, Optional
 from fastapi import Depends, HTTPException, status
 from fastapi_jwt_auth import AuthJWT
 from fastapi_jwt_auth.exceptions import AuthJWTException
+from opentelemetry import trace
 from redis.asyncio import Redis
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from werkzeug.security import generate_password_hash
 
+from auth.core.tracer import traced
 from auth.db.postgres import get_db_session
 from auth.db.redis import get_redis
 from auth.models.users import LoginHistory, Role, User, UserRole
@@ -19,31 +21,36 @@ from auth.schema.users import LoginHistoryResponse
 from auth.services.tokens import TokenService
 from auth.utils.permissions import access_token_required, refresh_token_required
 
+tracer = trace.get_tracer(__name__)
+
 
 class UserService:
     def __init__(
-        self,
-        db_session: AsyncSession,
-        redis: Redis,
-        token_service: TokenService,
+            self,
+            db_session: AsyncSession,
+            redis: Redis,
+            token_service: TokenService,
     ):
         self.db_session = db_session
         self.redis = (redis,)
         self.token_service = token_service
 
+    @traced(__name__)
     async def get_by_login(self, login: str) -> Optional[User]:
         """
         Поиск пользователя по логину
         """
-        result = await self.db_session.execute(select(User).where(User.login == login))
+        with tracer.start_as_current_span("get_user_postgres_request"):
+            result = await self.db_session.execute(select(User).where(User.login == login))
         return result.scalar_one_or_none()
 
+    @traced(__name__)
     async def create_user(
-        self,
-        login: str,
-        password: str,
-        first_name: Optional[str] = None,
-        last_name: Optional[str] = None,
+            self,
+            login: str,
+            password: str,
+            first_name: Optional[str] = None,
+            last_name: Optional[str] = None,
     ) -> User:
         """
         Создание пользователя
@@ -54,36 +61,40 @@ class UserService:
             first_name=first_name,
             last_name=last_name,
         )
-        self.db_session.add(new_user)
-        try:
-            await self.db_session.commit()
-            await self.db_session.refresh(new_user)
-            return new_user
-        except IntegrityError:
-            await self.db_session.rollback()
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Login already registered",
-            )
+        with tracer.start_as_current_span("add_user_postgres_request"):
+            self.db_session.add(new_user)
+            try:
+                await self.db_session.commit()
+                await self.db_session.refresh(new_user)
+                return new_user
+            except IntegrityError:
+                await self.db_session.rollback()
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Login already registered",
+                )
 
+    @traced(__name__)
     async def get_user_roles(self, user_id: uuid.UUID) -> List[str]:
         """
         Получение ролей пользователя из БД.
         """
-        result = await self.db_session.execute(
-            select(Role.name)
-            .join(UserRole, Role.id == UserRole.role_id)
-            .where(UserRole.user_id == user_id),
-        )
-        roles = result.scalars().all()
+        with tracer.start_as_current_span("get_user_roles_postgres_request"):
+            result = await self.db_session.execute(
+                select(Role.name)
+                .join(UserRole, Role.id == UserRole.role_id)
+                .where(UserRole.user_id == user_id),
+            )
+            roles = result.scalars().all()
         return roles
 
+    @traced(__name__)
     async def login(
-        self,
-        login: str,
-        password: str,
-        Authorize: AuthJWT,
-        user_agent: str,
+            self,
+            login: str,
+            password: str,
+            Authorize: AuthJWT,
+            user_agent: str,
     ) -> TokenResponse:
         """
         Вход пользователя
@@ -100,10 +111,11 @@ class UserService:
                        "roles": roles,
                        "first_name": str(db_user.first_name),
                        "last_name": str(db_user.last_name)}
-        self.db_session.add(
-            LoginHistory(user_id=db_user.id, user_agent=user_agent),
-        )
-        await self.db_session.commit()
+        with tracer.start_as_current_span("get_user_postgres_request"):
+            self.db_session.add(
+                LoginHistory(user_id=db_user.id, user_agent=user_agent),
+            )
+            await self.db_session.commit()
 
         return await self.token_service.generate_tokens(
             Authorize,
@@ -111,40 +123,43 @@ class UserService:
             db_user.id,
         )
 
+    @traced(__name__)
     async def update_user_credentials(
-        self,
-        user_id: uuid.UUID,
-        login: Optional[str] = None,
-        password: Optional[str] = None,
+            self,
+            user_id: uuid.UUID,
+            login: Optional[str] = None,
+            password: Optional[str] = None,
     ) -> User:
         """
         Обновление логина или пароля пользователя
         """
-        user = await self.db_session.get(User, user_id)
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found",
-            )
+        with tracer.start_as_current_span("get_user_postgres_request"):
+            user = await self.db_session.get(User, user_id)
+            if not user:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="User not found",
+                )
 
-        if login:
-            user.login = login
-        if password:
-            user.password = generate_password_hash(password)
+            if login:
+                user.login = login
+            if password:
+                user.password = generate_password_hash(password)
 
-        try:
-            await self.db_session.commit()
-            await self.db_session.refresh(user)
-        except IntegrityError:
-            await self.db_session.rollback()
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Login already registered",
-            )
+            try:
+                await self.db_session.commit()
+                await self.db_session.refresh(user)
+            except IntegrityError:
+                await self.db_session.rollback()
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Login already registered",
+                )
 
         return user
 
     @refresh_token_required
+    @traced(__name__)
     async def logout_user(self, authorize: AuthJWT) -> bool:
         """
         Выход пользователя из аккаунта
@@ -159,6 +174,7 @@ class UserService:
         return True
 
     @refresh_token_required
+    @traced(__name__)
     async def refresh_access_token(self, authorize: AuthJWT) -> TokenResponse:
         """
         Получение новой пары токенов Access и Refresh
@@ -185,22 +201,23 @@ class UserService:
         return await self.token_service.generate_tokens(authorize, user_claims, user_id)
 
     @access_token_required
+    @traced(__name__)
     async def get_login_history(
-        self,
-        authorize: AuthJWT,
-        page_size: int,
-        page_number: int,
+            self,
+            authorize: AuthJWT,
+            page_size: int,
+            page_number: int,
     ) -> List[LoginHistoryResponse]:
         user_id = uuid.UUID(authorize.get_jwt_subject())
         offset = (page_number - 1) * page_size
-
-        result = await self.db_session.execute(
-            select(LoginHistory)
-            .where(LoginHistory.user_id == user_id)
-            .order_by(LoginHistory.login_time.desc())
-            .limit(page_size)
-            .offset(offset),
-        )
+        with tracer.start_as_current_span("get_login_history_postgres_request"):
+            result = await self.db_session.execute(
+                select(LoginHistory)
+                .where(LoginHistory.user_id == user_id)
+                .order_by(LoginHistory.login_time.desc())
+                .limit(page_size)
+                .offset(offset),
+            )
         history = result.scalars().all()
         return [
             LoginHistoryResponse(
@@ -213,8 +230,8 @@ class UserService:
 
 @lru_cache()
 def get_user_service(
-    db_session: AsyncSession = Depends(get_db_session),
-    redis: Redis = Depends(get_redis),
+        db_session: AsyncSession = Depends(get_db_session),
+        redis: Redis = Depends(get_redis),
 ) -> UserService:
     token_service = TokenService(redis)
     return UserService(db_session, redis, token_service)

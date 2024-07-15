@@ -4,6 +4,7 @@ from typing import List
 from fastapi import APIRouter, Depends, Request, status
 from fastapi_jwt_auth import AuthJWT
 
+from auth.core.tracer import traced
 from auth.core.jwt import security_jwt
 from auth.schema.tokens import LoginRequest, TokenResponse
 from auth.schema.users import (LoginHistoryResponse,
@@ -17,7 +18,8 @@ router = APIRouter()
 
 
 @router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def register_user(user: UserCreate, service: UserService = Depends(get_user_service)):
+@traced(__name__)
+async def register_user(request: Request, user: UserCreate, service: UserService = Depends(get_user_service)):
     """
     ## Регистрация нового пользователя
 
@@ -45,7 +47,8 @@ async def register_user(user: UserCreate, service: UserService = Depends(get_use
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login_user(user: LoginRequest, request: Request, service: UserService = Depends(get_user_service),
+@traced(__name__)
+async def login_user(request: Request, user: LoginRequest, service: UserService = Depends(get_user_service),
                      Authorize: AuthJWT = Depends()):
     """
     ## Вход пользователя
@@ -72,7 +75,9 @@ async def login_user(user: LoginRequest, request: Request, service: UserService 
 
 
 @router.post("/token/refresh", response_model=TokenResponse)
+@traced(__name__)
 async def refresh_access_token(
+        request: Request,
         service: UserService = Depends(get_user_service),
         authorize: AuthJWT = Depends(),
         user: dict = Depends(security_jwt),
@@ -92,7 +97,9 @@ async def refresh_access_token(
 
 
 @router.post("/logout", response_model=bool)
+@traced(__name__)
 async def logout_user(
+        request: Request,
         service: UserService = Depends(get_user_service),
         authorize: AuthJWT = Depends(),
         user: dict = Depends(security_jwt),
@@ -108,10 +115,10 @@ async def logout_user(
     return await service.logout_user(authorize)
 
 
-@router.patch("/update-credentials",
-              response_model=UserResponse,
-              )
+@router.patch("/update-credentials", response_model=UserResponse, )
+@traced(__name__)
 async def update_user_credentials(
+        request: Request,
         user_credentials: UpdateUserCredentialsRequest,
         service: UserService = Depends(get_user_service),
         Authorize: AuthJWT = Depends(),
@@ -150,7 +157,9 @@ async def update_user_credentials(
 
 
 @router.get("/login/history", response_model=List[LoginHistoryResponse])
+@traced(__name__)
 async def get_login_history(
+        request: Request,
         authorize: AuthJWT = Depends(),
         user: dict = Depends(security_jwt),
         service: UserService = Depends(get_user_service),
