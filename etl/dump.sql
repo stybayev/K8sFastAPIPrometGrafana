@@ -65,7 +65,9 @@ CREATE EXTENSION IF NOT EXISTS fuzzystrmatch WITH SCHEMA public;
 --
 
 CREATE EXTENSION IF NOT EXISTS pg_partman WITH SCHEMA partman;
-ALTER SYSTEM set shared_preload_libraries = 'pg_partman_bgw';
+ALTER SYSTEM SET shared_preload_libraries = 'pg_partman_bgw';
+ALTER SYSTEM SET pg_partman_bgw.interval = 3600;
+ALTER SYSTEM SET pg_partman_bgw.dbname = 'postgres';
 --
 -- Name: EXTENSION fuzzystrmatch; Type: COMMENT; Schema: -; Owner:
 --
