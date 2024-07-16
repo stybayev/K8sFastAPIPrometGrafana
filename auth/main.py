@@ -39,4 +39,4 @@ app.middleware("http")(check_blacklist)
 
 app.include_router(users.router, prefix='/api/v1/auth/users', tags=['users'])
 app.include_router(roles.router, prefix='/api/v1/auth/roles', tags=['roles'])
-app.include_router(oauth_router.router, prefix='/api/v1/auth/oauth', tags=['oauth'])
+app.include_router(oauth_router.router, prefix="/api/v1/auth", tags=["yandex"])

@@ -17,9 +17,8 @@ YANDEX_USER_INFO_URL = "https://login.yandex.ru/info"
 async def yandex_login():
     redirect_uri = settings.YANDEX_REDIRECT_URI
     client_id = settings.YANDEX_CLIENT_ID
-    return {
-        "auth_url": f"{YANDEX_AUTH_URL}?response_type=code&client_id={client_id}&redirect_uri={redirect_uri}"
-    }
+    auth_url = f"{YANDEX_AUTH_URL}?response_type=code&client_id={client_id}&redirect_uri={redirect_uri}"
+    return {"auth_url": auth_url}
 
 
 @router.get("/yandex/callback")
@@ -29,6 +28,7 @@ async def yandex_callback(
         service: UserService = Depends(get_user_service)
 ):
     code = request.query_params.get("code")
+    print(f"Received code: {code}")  # Временная запись в логи для отладки
     if not code:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Authorization code not provided")
 
@@ -80,4 +80,3 @@ async def yandex_callback(
     user_claims = {"id": str(user.id), "roles": roles}
     tokens = await service.token_service.generate_tokens(Authorize, user_claims, str(user.id))
 
-    return TokenResponse(access_token=tokens.access_token, refresh_token=tokens.refresh_token)
