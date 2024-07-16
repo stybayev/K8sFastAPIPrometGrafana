@@ -22,14 +22,21 @@ from auth.utils.permissions import access_token_required, refresh_token_required
 
 class UserService:
     def __init__(
-        self,
-        db_session: AsyncSession,
-        redis: Redis,
-        token_service: TokenService,
+            self,
+            db_session: AsyncSession,
+            redis: Redis,
+            token_service: TokenService,
     ):
         self.db_session = db_session
         self.redis = (redis,)
         self.token_service = token_service
+
+    async def get_user_by_id(self, user_id: uuid.UUID) -> Optional[User]:
+        """
+        Получение пользователя по ID
+        """
+        result = await self.db_session.execute(select(User).where(User.id == user_id))
+        return result.scalar_one_or_none()
 
     async def get_by_login(self, login: str) -> Optional[User]:
         """
@@ -39,11 +46,11 @@ class UserService:
         return result.scalar_one_or_none()
 
     async def create_user(
-        self,
-        login: str,
-        password: str,
-        first_name: Optional[str] = None,
-        last_name: Optional[str] = None,
+            self,
+            login: str,
+            password: str,
+            first_name: Optional[str] = None,
+            last_name: Optional[str] = None,
     ) -> User:
         """
         Создание пользователя
@@ -79,11 +86,11 @@ class UserService:
         return roles
 
     async def login(
-        self,
-        login: str,
-        password: str,
-        Authorize: AuthJWT,
-        user_agent: str,
+            self,
+            login: str,
+            password: str,
+            Authorize: AuthJWT,
+            user_agent: str,
     ) -> TokenResponse:
         """
         Вход пользователя
@@ -112,10 +119,10 @@ class UserService:
         )
 
     async def update_user_credentials(
-        self,
-        user_id: uuid.UUID,
-        login: Optional[str] = None,
-        password: Optional[str] = None,
+            self,
+            user_id: uuid.UUID,
+            login: Optional[str] = None,
+            password: Optional[str] = None,
     ) -> User:
         """
         Обновление логина или пароля пользователя
@@ -186,10 +193,10 @@ class UserService:
 
     @access_token_required
     async def get_login_history(
-        self,
-        authorize: AuthJWT,
-        page_size: int,
-        page_number: int,
+            self,
+            authorize: AuthJWT,
+            page_size: int,
+            page_number: int,
     ) -> List[LoginHistoryResponse]:
         user_id = uuid.UUID(authorize.get_jwt_subject())
         offset = (page_number - 1) * page_size
@@ -213,8 +220,8 @@ class UserService:
 
 @lru_cache()
 def get_user_service(
-    db_session: AsyncSession = Depends(get_db_session),
-    redis: Redis = Depends(get_redis),
+        db_session: AsyncSession = Depends(get_db_session),
+        redis: Redis = Depends(get_redis),
 ) -> UserService:
     token_service = TokenService(redis)
     return UserService(db_session, redis, token_service)

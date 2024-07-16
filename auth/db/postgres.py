@@ -11,11 +11,8 @@ async_session = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=
 
 
 async def create_database() -> None:
-    print('Creating database...')
     async with engine.begin() as conn:
-        print('Creating schema...')
         await conn.execute(text("CREATE SCHEMA IF NOT EXISTS auth"))
-        print('Creating tables...')
         from auth.models.users import LoginHistory, Role, User, UserRole
         await conn.run_sync(Base.metadata.create_all)
 

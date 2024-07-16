@@ -71,37 +71,38 @@ async def yandex_callback(
     if user_info_response.status_code != 200:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to get user info")
 
-    # Получение данных о пользователе и создание или обновление пользователя
+    # Получение данных о пользователе
     yandex_id = user_info.get("id")
     email = user_info.get("default_email")
     first_name = user_info.get("first_name")
     last_name = user_info.get("last_name")
-
-    # Проверка, существует ли пользователь в базе данных
-    user = await service.get_by_login(email)
-
-    # Если пользователя нет, создаем нового
-    if not user:
-        user_data = UserCreate(
-            login=email,
-            password="",
-            first_name=first_name,
-            last_name=last_name,
-        )
-        user = await service.create_user(
-            login=user_data.login,
-            password=user_data.password,
-            first_name=user_data.first_name,
-            last_name=user_data.last_name
-        )
 
     # Проверка, существует ли запись в SocialAccount
     query = select(SocialAccount).filter_by(social_id=yandex_id, social_name="yandex")
     result = await db_session.execute(query)
     social_account = result.scalars().first()
 
-    # Если записи в SocialAccount нет, создаем новую
-    if not social_account:
+    if social_account:
+        # Если запись существует, получаем пользователя по user_id
+        user = await service.get_user_by_id(social_account.user_id)
+    else:
+        # Если записи нет, создаем нового пользователя
+        user = await service.get_by_login(email)
+        if not user:
+            user_data = UserCreate(
+                login=email,
+                password="",
+                first_name=first_name,
+                last_name=last_name,
+            )
+            user = await service.create_user(
+                login=user_data.login,
+                password=user_data.password,
+                first_name=user_data.first_name,
+                last_name=user_data.last_name
+            )
+
+        # Создаем новую запись в SocialAccount
         social_account = SocialAccount(
             user_id=user.id,
             social_id=yandex_id,
