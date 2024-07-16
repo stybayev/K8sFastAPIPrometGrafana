@@ -58,21 +58,20 @@ async def yandex_callback(
     if response.status_code != 200:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to get access token")
 
-    access_token = response_data['access_token']
-
     # Запрос для получения информации о пользователе
+    access_token = response_data['access_token']
     user_info_response = await client.get(YANDEX_USER_INFO_URL, headers={"Authorization": f"OAuth {access_token}"})
     user_info = user_info_response.json()
 
     if user_info_response.status_code != 200:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to get user info")
 
+    # Получение данных о пользователе и создание или обновление пользователя
     yandex_id = user_info.get("id")
     email = user_info.get("default_email")
     first_name = user_info.get("first_name")
     last_name = user_info.get("last_name")
 
-    # Проверка наличия пользователя в базе данных, если нет - создание
     user = await service.get_by_login(email)
     if not user:
         user_data = UserCreate(
@@ -90,7 +89,10 @@ async def yandex_callback(
 
     # Генерация токенов для пользователя
     roles = await service.get_user_roles(user.id)
-    user_claims = {"id": str(user.id), "roles": roles}
+    user_claims = {"id": str(user.id),
+                   "roles": roles,
+                   "first_name": str(user.first_name),
+                   "last_name": str(user.last_name)}
     tokens = await service.token_service.generate_tokens(Authorize, user_claims, str(user.id))
 
     return TokenResponse(access_token=tokens.access_token, refresh_token=tokens.refresh_token)
