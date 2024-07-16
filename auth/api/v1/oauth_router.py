@@ -2,10 +2,14 @@ import httpx
 from fastapi import APIRouter, Depends, Request, HTTPException, status
 from fastapi_jwt_auth import AuthJWT
 from auth.core.config import settings
+from auth.models.social import SocialAccount
 from auth.services.users import UserService, get_user_service
 from auth.schema.tokens import TokenResponse
 from auth.schema.users import UserCreate
 import logging
+from sqlalchemy.ext.asyncio import AsyncSession
+from auth.db.postgres import get_db_session
+from sqlalchemy.future import select
 
 from auth.utils.helpers import get_http_client
 
@@ -32,6 +36,7 @@ async def yandex_callback(
         request: Request,
         Authorize: AuthJWT = Depends(),
         service: UserService = Depends(get_user_service),
+        db_session: AsyncSession = Depends(get_db_session),
         client: httpx.AsyncClient = Depends(get_http_client)
 ):
     """
@@ -72,7 +77,10 @@ async def yandex_callback(
     first_name = user_info.get("first_name")
     last_name = user_info.get("last_name")
 
+    # Проверка, существует ли пользователь в базе данных
     user = await service.get_by_login(email)
+
+    # Если пользователя нет, создаем нового
     if not user:
         user_data = UserCreate(
             login=email,
@@ -86,6 +94,21 @@ async def yandex_callback(
             first_name=user_data.first_name,
             last_name=user_data.last_name
         )
+
+    # Проверка, существует ли запись в SocialAccount
+    query = select(SocialAccount).filter_by(social_id=yandex_id, social_name="yandex")
+    result = await db_session.execute(query)
+    social_account = result.scalars().first()
+
+    # Если записи в SocialAccount нет, создаем новую
+    if not social_account:
+        social_account = SocialAccount(
+            user_id=user.id,
+            social_id=yandex_id,
+            social_name="yandex"
+        )
+        db_session.add(social_account)
+        await db_session.commit()
 
     # Генерация токенов для пользователя
     roles = await service.get_user_roles(user.id)
