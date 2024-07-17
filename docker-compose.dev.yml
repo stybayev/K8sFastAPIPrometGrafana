@@ -154,3 +154,12 @@ services:
     volumes:
       - minio_storage:/data
     command: server --console-address ":9001" /data
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    <<: *app
+    ports:
+      - ${JAEGER_UDP}:6831/udp
+      - ${JAEGER_PORT}:16686
+    command: [ "--log-level=debug" ]
