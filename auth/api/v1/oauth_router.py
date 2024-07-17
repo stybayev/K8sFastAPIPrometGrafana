@@ -19,6 +19,7 @@ router = APIRouter()
 YANDEX_AUTH_URL = "https://oauth.yandex.ru/authorize"
 YANDEX_TOKEN_URL = "https://oauth.yandex.ru/token"
 YANDEX_USER_INFO_URL = "https://login.yandex.ru/info"
+BASE_URL='https://oauth.yandex.ru/client/9aa0b691945a451fb05a882ae9b6616f'
 
 
 @router.get("/yandex/login")
