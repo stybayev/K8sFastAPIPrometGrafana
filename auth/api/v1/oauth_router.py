@@ -83,7 +83,7 @@ async def yandex_callback(
         user = await service.get_user_by_id(social_account.user_id)
     else:
         # Если записи нет, создаем нового пользователя
-        user = await service.get_by_login(user_info.get("login"))
+        user = await service.get_user_by_universal_login(user_info.get("default_email"))
         if not user:
             user_data = UserCreate(
                 login=user_info.get("login"),
