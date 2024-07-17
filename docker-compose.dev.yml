@@ -174,3 +174,4 @@ services:
     depends_on:
       - app
       - auth
+ 
