@@ -139,6 +139,8 @@ services:
       - static:/data/static/:ro
     depends_on:
       - app
+      - auth
+      - rate_limit
     ports:
       - "80:80"
 
@@ -163,3 +165,12 @@ services:
       - ${JAEGER_UDP}:6831/udp
       - ${JAEGER_PORT}:16686
     command: [ "--log-level=debug" ]
+
+  rate_limit:
+    build: ./rate_limit
+    <<: *app
+    volumes:
+      - .:/rate_limit
+    depends_on:
+      - app
+      - auth
