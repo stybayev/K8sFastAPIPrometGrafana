@@ -2,6 +2,7 @@ import httpx
 from fastapi import APIRouter, Depends, Request, HTTPException, status
 from fastapi_jwt_auth import AuthJWT
 from auth.core.config import settings
+from auth.core.tracer import traced
 from auth.models.social import SocialAccount
 from auth.services.users import UserService, get_user_service
 from auth.schema.tokens import TokenResponse

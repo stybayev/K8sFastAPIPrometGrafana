@@ -44,7 +44,7 @@ class Settings(BaseSettings):
     # OAuth2
     YANDEX_CLIENT_ID: str = Field(default='client_id', env='YANDEX_CLIENT_ID')
     YANDEX_CLIENT_SECRET: str = Field(default='client_secret', env='YANDEX_CLIENT_SECRET')
-    YANDEX_REDIRECT_URI: str = Field(default='http://0.0.0.0:8082/api/v1/auth/yandex/callback',
+    YANDEX_REDIRECT_URI: str = Field(default='http://127.0.0.1/api/v1/auth/yandex/callback',
                                      env='YANDEX_REDIRECT_URI')
 
     class Config:
