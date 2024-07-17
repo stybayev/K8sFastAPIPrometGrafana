@@ -38,6 +38,7 @@ def upgrade() -> None:
         "users",
         sa.Column("id", sa.UUID(), nullable=False),
         sa.Column("login", sa.String(length=255), nullable=False),
+        sa.Column("email", sa.String(length=255), nullable=True),
         sa.Column("password", sa.String(length=255), nullable=False),
         sa.Column("first_name", sa.String(length=50), nullable=True),
         sa.Column("last_name", sa.String(length=50), nullable=True),
@@ -45,6 +46,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("id"),
         sa.UniqueConstraint("login"),
+        sa.UniqueConstraint("email"),
         schema="auth",
     )
 
