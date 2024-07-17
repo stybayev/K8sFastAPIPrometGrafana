@@ -3,6 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 from auth.core.config import settings
+from typing import AsyncGenerator
+import httpx
 
 Base = declarative_base()
 
@@ -31,3 +33,11 @@ async def get_db_session() -> AsyncSession:
             raise
         finally:
             await session.close()
+
+
+async def get_http_client() -> AsyncGenerator[httpx.AsyncClient, None]:
+    """
+    Генератор для получения httpx.AsyncClient
+    """
+    async with httpx.AsyncClient() as client:
+        yield client
