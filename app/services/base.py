@@ -120,18 +120,33 @@ class RepositoryElastic(Repository, Generic[ModelType, PaginatedModel]):
                     "bool": {
                         "should": [
                             {
-                                "match_phrase": {
-                                    "director.id": {"query": params.person_id}
+                                "nested": {
+                                    "path": "actors",
+                                    "query": {
+                                        "term": {
+                                            "actors.id": params.person_id
+                                        }
+                                    }
                                 }
                             },
                             {
-                                "match_phrase": {
-                                    "actors.id": {"query": params.person_id}
+                                "nested": {
+                                    "path": "director",
+                                    "query": {
+                                        "term": {
+                                            "director.id": params.person_id
+                                        }
+                                    }
                                 }
                             },
                             {
-                                "match_phrase": {
-                                    "writers.id": {"query": params.person_id}
+                                "nested": {
+                                    "path": "writers",
+                                    "query": {
+                                        "term": {
+                                            "writers.id": params.person_id
+                                        }
+                                    }
                                 }
                             }
                         ]
@@ -152,9 +167,17 @@ class RepositoryElastic(Repository, Generic[ModelType, PaginatedModel]):
 
         # Фильтрация по жанру
         if params.genre:
-            query_body["query"]["bool"]["must"].append({
-                "match": {"genre": params.genre}
-            })
+            query_body["query"] = {
+                "bool": {
+                    "must": [
+                        {
+                            "terms": {
+                                "genre": params.genre
+                            }
+                        }
+                    ]
+                }
+            }
 
         # Сортировка
         if params.sort:
