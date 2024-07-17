@@ -56,14 +56,16 @@ class UserService:
             self,
             login: str,
             password: str,
-            first_name: Optional[str] = None,
-            last_name: Optional[str] = None,
+            email: str | None = None,
+            first_name: str | None = None,
+            last_name: str | None = None,
     ) -> User:
         """
         Создание пользователя
         """
         new_user = User(
             login=login,
+            email=email,
             password=password,
             first_name=first_name,
             last_name=last_name,

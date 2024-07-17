@@ -19,7 +19,7 @@ router = APIRouter()
 YANDEX_AUTH_URL = "https://oauth.yandex.ru/authorize"
 YANDEX_TOKEN_URL = "https://oauth.yandex.ru/token"
 YANDEX_USER_INFO_URL = "https://login.yandex.ru/info"
-BASE_URL='https://oauth.yandex.ru/client/9aa0b691945a451fb05a882ae9b6616f'
+BASE_URL = 'https://oauth.yandex.ru/client/9aa0b691945a451fb05a882ae9b6616f'
 
 
 @router.get("/yandex/login")
@@ -73,14 +73,8 @@ async def yandex_callback(
     if user_info_response.status_code != 200:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to get user info")
 
-    # Получение данных о пользователе
-    yandex_id = user_info.get("id")
-    email = user_info.get("default_email")
-    first_name = user_info.get("first_name")
-    last_name = user_info.get("last_name")
-
     # Проверка, существует ли запись в SocialAccount
-    query = select(SocialAccount).filter_by(social_id=yandex_id, social_name="yandex")
+    query = select(SocialAccount).filter_by(social_id=user_info.get("id"), social_name="yandex")
     result = await db_session.execute(query)
     social_account = result.scalars().first()
 
@@ -89,16 +83,18 @@ async def yandex_callback(
         user = await service.get_user_by_id(social_account.user_id)
     else:
         # Если записи нет, создаем нового пользователя
-        user = await service.get_by_login(email)
+        user = await service.get_by_login(user_info.get("login"))
         if not user:
             user_data = UserCreate(
-                login=email,
+                login=user_info.get("login"),
+                email=user_info.get("default_email"),
                 password="",
-                first_name=first_name,
-                last_name=last_name,
+                first_name=user_info.get("first_name"),
+                last_name=user_info.get("last_name"),
             )
             user = await service.create_user(
                 login=user_data.login,
+                email=user_data.email,
                 password=user_data.password,
                 first_name=user_data.first_name,
                 last_name=user_data.last_name
@@ -107,7 +103,7 @@ async def yandex_callback(
         # Создаем новую запись в SocialAccount
         social_account = SocialAccount(
             user_id=user.id,
-            social_id=yandex_id,
+            social_id=user_info.get("id"),
             social_name="yandex"
         )
         db_session.add(social_account)
