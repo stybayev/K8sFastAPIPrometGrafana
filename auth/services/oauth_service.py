@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 import httpx
 from fastapi import Depends, HTTPException, status
 from fastapi_jwt_auth import AuthJWT
@@ -105,6 +107,7 @@ class OAuthService:
         return TokenResponse(access_token=tokens.access_token, refresh_token=tokens.refresh_token)
 
 
+@lru_cache()
 def get_oauth_service(
         user_service: UserService = Depends(get_user_service),
         db_session: AsyncSession = Depends(get_db_session),

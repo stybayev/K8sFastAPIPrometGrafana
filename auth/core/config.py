@@ -21,7 +21,7 @@ class DataBaseSettings(BaseSettings):
         return f'postgresql+asyncpg://{self.user}:{self.password}@{self.host}:{self.port}/{self.db}'
 
 
-class OAuthSettings(BaseSettings):
+class OAuthYandexSettings(BaseSettings):
     client_id: str = ...
     client_secret: str = ...
     redirect_uri: str = ...
@@ -54,8 +54,8 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRES: int = Field(default=30, env='ACCESS_TOKEN_EXPIRES')
     REFRESH_TOKEN_EXPIRES: int = Field(default=1440, env='REFRESH_TOKEN_EXPIRES')
 
-    # OAuth2
-    oauth: OAuthSettings = OAuthSettings()
+    # OAuth2 Yandex
+    oauth: OAuthYandexSettings = OAuthYandexSettings()
 
     class Config:
         env_file = '.env'

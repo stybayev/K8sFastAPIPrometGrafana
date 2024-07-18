@@ -25,5 +25,4 @@ async def yandex_callback(
     Роут для обработки кода авторизации Яндекса, получения токена доступа и информации о пользователе
     """
     code = request.query_params.get("code")
-    logging.info(f"Received code: {code}")
     return await service.yandex_callback(code, Authorize)
