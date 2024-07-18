@@ -21,6 +21,19 @@ class DataBaseSettings(BaseSettings):
         return f'postgresql+asyncpg://{self.user}:{self.password}@{self.host}:{self.port}/{self.db}'
 
 
+class OAuthSettings(BaseSettings):
+    client_id: str = ...
+    client_secret: str = ...
+    redirect_uri: str = ...
+    auth_url: str = ...
+    token_url: str = ...
+    user_info_url: str = ...
+
+    class Config:
+        env_file = '.env'
+        env_prefix = 'YANDEX_'
+
+
 class Settings(BaseSettings):
     # App
     project_name: str = Field(default='Auth API', env='File API')
@@ -42,10 +55,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRES: int = Field(default=1440, env='REFRESH_TOKEN_EXPIRES')
 
     # OAuth2
-    YANDEX_CLIENT_ID: str = Field(default='client_id', env='YANDEX_CLIENT_ID')
-    YANDEX_CLIENT_SECRET: str = Field(default='client_secret', env='YANDEX_CLIENT_SECRET')
-    YANDEX_REDIRECT_URI: str = Field(default='http://127.0.0.1/api/v1/auth/yandex/callback',
-                                     env='YANDEX_REDIRECT_URI')
+    oauth: OAuthSettings = OAuthSettings()
 
     class Config:
         env_file = '.env'
