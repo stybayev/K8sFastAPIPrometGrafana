@@ -17,6 +17,7 @@
    docker-compose -f docker-compose.dev.yml  up --build 
    ```
 5) Все должно работать!
+***
 
 ## Сервисы приложения:
 
@@ -48,6 +49,7 @@ http://127.0.0.1/api/auth/openapi
 ```
 python auth/core/su.py admin password
 ```
+***
 
 ### Сервис Django Admin
 
@@ -65,6 +67,7 @@ python auth/core/su.py admin password
 ```
 http://127.0.0.1/admin
 ```
+***
 
 ### Cервис выдачи контента
 
@@ -80,6 +83,7 @@ http://127.0.0.1/admin
 ```
 http://127.0.0.1/api/films/openapi
 ```
+***
 
 ### Cервис FileApi
 
@@ -95,6 +99,7 @@ http://127.0.0.1/api/films/openapi
 ```
 http://127.0.0.1/api/files/openapi
 ```
+***
 
 ### Jaeger
 
@@ -105,6 +110,7 @@ Jaeger используется для трассировки запросов �
 ```
 http://127.0.0.1:16686
 ```
+***
 
 ## Инструкция по запуску тестов
 
