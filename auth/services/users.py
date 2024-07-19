@@ -1,6 +1,6 @@
 import uuid
 from functools import lru_cache
-from typing import List, Optional
+from typing import List
 
 from fastapi import Depends, HTTPException, status
 from fastapi_jwt_auth import AuthJWT
@@ -35,8 +35,26 @@ class UserService:
         self.redis = (redis,)
         self.token_service = token_service
 
+    async def get_user_by_id(self, user_id: uuid.UUID) -> User | None:
+        """
+        Получение пользователя по ID
+        """
+        result = await self.db_session.execute(select(User).where(User.id == user_id))
+        return result.scalar_one_or_none()
+
     @traced(__name__)
-    async def get_by_login(self, login: str) -> Optional[User]:
+    async def get_user_by_universal_login(self, login_or_email: str) -> User | None:
+        """
+        Поиск пользователя по логину или email
+        """
+        with tracer.start_as_current_span("get_user_by_universal_login_postgres_request"):
+            result = await self.db_session.execute(
+                select(User).where((User.login == login_or_email) | (User.email == login_or_email))
+            )
+        return result.scalar_one_or_none()
+
+    @traced(__name__)
+    async def get_by_login(self, login: str) -> User | None:
         """
         Поиск пользователя по логину
         """
@@ -49,14 +67,16 @@ class UserService:
             self,
             login: str,
             password: str,
-            first_name: Optional[str] = None,
-            last_name: Optional[str] = None,
+            email: str | None = None,
+            first_name: str | None = None,
+            last_name: str | None = None,
     ) -> User:
         """
         Создание пользователя
         """
         new_user = User(
             login=login,
+            email=email,
             password=password,
             first_name=first_name,
             last_name=last_name,
@@ -127,8 +147,8 @@ class UserService:
     async def update_user_credentials(
             self,
             user_id: uuid.UUID,
-            login: Optional[str] = None,
-            password: Optional[str] = None,
+            login: str | None = None,
+            password: str | None = None,
     ) -> User:
         """
         Обновление логина или пароля пользователя

@@ -3,6 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 from auth.core.config import settings
+from typing import AsyncGenerator
+import httpx
 
 Base = declarative_base()
 
@@ -11,11 +13,8 @@ async_session = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=
 
 
 async def create_database() -> None:
-    print('Creating database...')
     async with engine.begin() as conn:
-        print('Creating schema...')
         await conn.execute(text("CREATE SCHEMA IF NOT EXISTS auth"))
-        print('Creating tables...')
         from auth.models.users import LoginHistory, Role, User, UserRole
         await conn.run_sync(Base.metadata.create_all)
 
@@ -34,3 +33,11 @@ async def get_db_session() -> AsyncSession:
             raise
         finally:
             await session.close()
+
+
+async def get_http_client() -> AsyncGenerator[httpx.AsyncClient, None]:
+    """
+    Генератор для получения httpx.AsyncClient
+    """
+    async with httpx.AsyncClient() as client:
+        yield client

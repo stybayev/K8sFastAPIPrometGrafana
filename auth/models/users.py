@@ -27,6 +27,7 @@ class User(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True)
     login = Column(String(255), nullable=False, unique=True)
+    email = Column(String(255), nullable=True, unique=True)
     password = Column(String(255), nullable=False)
     first_name = Column(String(50), nullable=True)
     last_name = Column(String(50), nullable=True)
@@ -43,11 +44,13 @@ class User(Base):
     def __init__(
         self,
         login: str,
+        email: str,
         password: str,
         first_name: str,
         last_name: str,
     ) -> None:
         self.login = login
+        self.email = email
         self.password = generate_password_hash(password)
         self.first_name = first_name
         self.last_name = last_name
