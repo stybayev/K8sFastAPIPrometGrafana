@@ -1,0 +1,4 @@
+aiohttp
+aioredis
+fastapi==0.99.1
+uvicorn==0.24.0
