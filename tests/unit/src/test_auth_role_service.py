@@ -10,7 +10,8 @@ from auth.services.roles import RoleService
 
 
 @pytest.mark.asyncio
-async def test_create_role(setup_jwt, test_role, auth_async_client, mock_redis_client):
+async def test_create_role(setup_jwt, test_role, auth_async_client,
+                           mock_redis_client, request_headers):
     role_data = {
         "name": "test_role",
         "description": "test description",
@@ -18,7 +19,8 @@ async def test_create_role(setup_jwt, test_role, auth_async_client, mock_redis_c
     }
     headers = {
         "Authorization": f"Bearer {setup_jwt['access_token']}",
-        "X-Refresh-Token": setup_jwt['refresh_token']
+        "X-Refresh-Token": setup_jwt['refresh_token'],
+        'X-Request-Id': str(uuid.uuid4())
     }
 
     # Проверяем случай, когда роль ещё не создана
@@ -61,7 +63,8 @@ async def test_delete_role(setup_jwt, test_role, auth_async_client, mock_redis_c
     }
     headers = {
         "Authorization": f"Bearer {setup_jwt['access_token']}",
-        "X-Refresh-Token": setup_jwt['refresh_token']
+        "X-Refresh-Token": setup_jwt['refresh_token'],
+        'X-Request-Id': str(uuid.uuid4())
     }
 
     role_id = uuid.uuid4()
@@ -92,7 +95,8 @@ async def test_update_role(setup_jwt, test_role, auth_async_client, mock_redis_c
     }
     headers = {
         "Authorization": f"Bearer {setup_jwt['access_token']}",
-        "X-Refresh-Token": setup_jwt['refresh_token']
+        "X-Refresh-Token": setup_jwt['refresh_token'],
+        'X-Request-Id': str(uuid.uuid4())
     }
 
     role = Role(name='test_role', description='Test Role')
@@ -124,7 +128,8 @@ async def test_get_user_permissions(setup_jwt, test_role, auth_async_client, moc
     )
     headers = {
         "Authorization": f"Bearer {setup_jwt['access_token']}",
-        "X-Refresh-Token": setup_jwt['refresh_token']
+        "X-Refresh-Token": setup_jwt['refresh_token'],
+        'X-Request-Id': str(uuid.uuid4())
     }
 
     with (

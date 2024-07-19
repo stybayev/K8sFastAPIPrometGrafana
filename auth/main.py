@@ -14,6 +14,7 @@ from auth.core.middleware import check_blacklist, before_request
 from auth.core.tracer import init_tracer
 from auth.db import redis
 from auth.utils.exception_handlers import authjwt_exception_handler
+import os
 
 
 @asynccontextmanager
@@ -35,8 +36,9 @@ app = FastAPI(
     swagger_ui_oauth2_redirect_url='/api/v1/auth/users/login'
 )
 
-init_tracer(app)
-FastAPIInstrumentor.instrument_app(app)
+if os.getenv("ENABLE_TRACING", "true") == "true":
+    init_tracer(app)
+    FastAPIInstrumentor.instrument_app(app)
 
 app.add_exception_handler(AuthJWTException, authjwt_exception_handler)
 

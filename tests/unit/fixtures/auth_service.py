@@ -1,3 +1,8 @@
+import os
+
+# Отключаем трассировку для тестов до загрузки приложения
+os.environ["ENABLE_TRACING"] = "false"
+
 import pytest_asyncio
 from fastapi_jwt_auth import AuthJWT
 from httpx import AsyncClient
@@ -9,6 +14,7 @@ from auth.main import app as auth_app
 from auth.models.users import User
 from auth.services.users import UserService
 from tests.unit.settings import TestJWTSettings
+import uuid
 
 
 @pytest_asyncio.fixture(name='user_service')
@@ -24,7 +30,7 @@ async def fixture_auth_async_client(auth_override_dependencies):
     """
     Фикстура для создания клиента AsyncClient.
     """
-    async with AsyncClient(app=auth_app, base_url='http://localhost/api/v1/auth') as client:
+    async with AsyncClient(app=auth_app, base_url='http://127.0.0.1/api/v1/auth/') as client:
         yield client
 
 
@@ -67,9 +73,17 @@ async def fixture_existing_user(mock_db_session, test_user: dict):
         login=test_user["login"],
         password=test_user["password"],
         first_name=test_user["first_name"],
-        last_name=test_user["last_name"]
+        last_name=test_user["last_name"],
+        email=test_user["login"] + "@example.com"
     )
     mock_db_session.add(user)
     await mock_db_session.commit()
     await mock_db_session.refresh(user)
     return user
+
+
+@pytest_asyncio.fixture(scope='function')
+def request_headers():
+    return {
+        'X-Request-Id': str(uuid.uuid4())
+    }
