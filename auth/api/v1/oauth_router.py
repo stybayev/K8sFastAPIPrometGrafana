@@ -1,7 +1,7 @@
-import logging
 from fastapi import APIRouter, Depends, Request
 from fastapi_jwt_auth import AuthJWT
 
+from auth.core.jwt import security_jwt
 from auth.services.oauth_service import OAuthService, get_oauth_service
 
 router = APIRouter()
@@ -26,3 +26,18 @@ async def yandex_callback(
     """
     code = request.query_params.get("code")
     return await service.yandex_callback(code, Authorize)
+
+
+@router.delete("/yandex/unlink")
+async def unlink_yandex_account(
+        user: dict = Depends(security_jwt),
+        Authorize: AuthJWT = Depends(),
+        service: OAuthService = Depends(get_oauth_service)
+):
+    """
+    Роут для открепления аккаунта Яндекса от пользователя.
+    """
+    Authorize.jwt_required()
+
+    current_user_id = Authorize.get_jwt_subject()
+    return await service.unlink_social_account(user_id=current_user_id, social_name="yandex")
