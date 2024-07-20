@@ -1,8 +1,7 @@
 import pytest
-from fastapi import status
+from fastapi import status, HTTPException
 from httpx import AsyncClient
 from unittest.mock import patch
-
 from auth.services.oauth_service import OAuthService
 
 
@@ -46,3 +45,32 @@ async def test_yandex_callback_missing_code(auth_async_client: AsyncClient, requ
 
     data = response.json()
     assert data['detail'] == 'Authorization code not provided'
+
+
+@pytest.mark.anyio
+async def test_unlink_yandex_account_success(auth_async_client: AsyncClient, mock_db_session, request_headers):
+    """
+    Проверяем, что при успешном откреплении аккаунта возвращается статус 200
+    """
+    with (patch.object(OAuthService, 'unlink_social_account',
+                       return_value={"detail": "Social account unlinked successfully"})):
+        response = await auth_async_client.delete('/yandex/unlink', headers=request_headers)
+        assert response.status_code == status.HTTP_200_OK
+
+        data = response.json()
+        assert data['detail'] == 'Social account unlinked successfully'
+
+
+@pytest.mark.anyio
+async def test_unlink_yandex_account_not_found(auth_async_client: AsyncClient, mock_db_session, request_headers):
+    """
+    Проверяем, что при отсутствии социального аккаунта возвращается статус 404
+    """
+    with (patch.object(OAuthService, 'unlink_social_account',
+                       side_effect=HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                                 detail="Social account not found"))):
+        response = await auth_async_client.delete('/yandex/unlink', headers=request_headers)
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+        data = response.json()
+        assert data['detail'] == 'Social account not found'

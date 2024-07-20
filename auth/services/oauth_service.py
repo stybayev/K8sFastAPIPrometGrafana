@@ -12,6 +12,7 @@ from auth.schema.users import UserCreate
 from auth.services.users import UserService, get_user_service
 from auth.db.postgres import get_db_session, get_http_client
 from auth.core.config import settings
+import uuid
 
 
 class OAuthService:
@@ -124,6 +125,21 @@ class OAuthService:
         user = await self.get_or_create_user(user_info)
 
         return await self.generate_tokens_for_user(user, Authorize)
+
+    async def unlink_social_account(self, user_id: uuid.UUID, social_name: str):
+        """
+        Удаление привязки аккаунта в соцсети от пользователя.
+        """
+        query = select(SocialAccount).filter_by(user_id=user_id, social_name=social_name)
+        result = await self.db_session.execute(query)
+        social_account = result.scalars().first()
+
+        if not social_account:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Social account not found")
+
+        await self.db_session.delete(social_account)
+        await self.db_session.commit()
+        return {"detail": "Social account unlinked successfully"}
 
 
 @lru_cache()
