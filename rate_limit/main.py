@@ -21,6 +21,8 @@ SERVICE_MAP = {
     "/api/v1/auth": "http://auth:8082",
     "/api/films": "http://app:8000",
     "/api/v1/films": "http://app:8000",
+    "/api/v1/genres": "http://app:8000",
+    "/api/v1/persons": "http://app:8000",
     "/api/files": "http://file_api:8081",
     "/api/v1/files": "http://file_api:8081",
     "/admin": "http://django_admin:8001",
@@ -65,6 +67,7 @@ async def proxy(request: Request, path: str):
             break
 
     if not target_url:
+        print("!!!!!")
         raise HTTPException(status_code=400, detail="Invalid target path")
 
     async with aiohttp.ClientSession() as client:

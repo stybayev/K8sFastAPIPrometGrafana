@@ -167,17 +167,17 @@ class RepositoryElastic(Repository, Generic[ModelType, PaginatedModel]):
 
         # Фильтрация по жанру
         if params.genre:
-            query_body["query"] = {
-                "bool": {
-                    "must": [
-                        {
-                            "terms": {
-                                "genre": params.genre
-                            }
-                        }
-                    ]
+            if "bool" not in query_body["query"]:
+                query_body["query"] = {
+                    "bool": {
+                        "must": []
+                    }
                 }
-            }
+            query_body["query"]["bool"]["must"].append({
+                "match": {
+                    "genre": params.genre
+                }
+            })
 
         # Сортировка
         if params.sort:
