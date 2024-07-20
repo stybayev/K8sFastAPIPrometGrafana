@@ -37,7 +37,6 @@ async def unlink_yandex_account(
     """
     Роут для открепления аккаунта Яндекса от пользователя.
     """
-    Authorize.jwt_required()
 
     current_user_id = Authorize.get_jwt_subject()
     return await service.unlink_social_account(user_id=current_user_id, social_name="yandex")
