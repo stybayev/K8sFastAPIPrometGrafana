@@ -8,6 +8,7 @@ from django.core.cache import cache
 from custom_auth.models import User
 from django.conf import settings
 from custom_auth.enums import Roles
+import uuid
 
 
 class CustomBackend(BaseBackend):
@@ -39,7 +40,8 @@ class CustomBackend(BaseBackend):
         url = settings.AUTH_API_LOGIN_URL
 
         try:
-            response = requests.post(url, data=json.dumps(payload))
+            headers = {'X-Request-Id': str(uuid.uuid4())}
+            response = requests.post(url, data=json.dumps(payload), headers=headers)
         except requests.exceptions.RequestException as e:
             logging.error(f"Auth service is not available: {e}")
             tokens = self.get_cached_tokens(username)
