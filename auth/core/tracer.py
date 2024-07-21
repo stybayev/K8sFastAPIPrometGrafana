@@ -7,6 +7,8 @@ from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
+from auth.core.config import settings
+
 
 def traced(name: str):
     """
@@ -21,8 +23,8 @@ def traced(name: str):
             with tracer.start_as_current_span(span_name) as span:
                 request = kwargs.get("request")
                 if request:
-                    request_id = request.headers.get('X-Request-Id')
-                    span.set_attribute('http.request_id', request_id)
+                    request_id = request.headers.get("X-Request-Id")
+                    span.set_attribute("http.request_id", request_id)
                 return await func(*args, **kwargs)
 
         return wrapper
@@ -32,15 +34,17 @@ def traced(name: str):
 
 def configure_tracer():
     # Установка имени сервиса
-    resource = Resource(attributes={
-        SERVICE_NAME: "auth-api"
-    })
+    resource = Resource(
+        attributes={
+            SERVICE_NAME: "auth-api",
+        },
+    )
     # Создаем провайдера трейсера
     trace.set_tracer_provider(TracerProvider(resource=resource))
 
     jaeger_exporter = JaegerExporter(
-        agent_host_name="jaeger",  # Это имя контейнера в docker-compose
-        agent_port=6831,
+        agent_host_name=settings.jaeger_host,
+        agent_port=settings.jaeger_port,
     )
 
     # Добавляем SpanProcessor для отправки данных в Jaeger
