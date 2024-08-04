@@ -76,6 +76,5 @@ rate_limit --> auth : "Rate Limiting"
 nginx --> auth : "Proxy Requests"
 nginx --> movie_search : "Proxy Requests"
 nginx --> rate_limit : "Proxy Requests"
-nginx --> django_admin : "Proxy Requests"
 nginx --> file_api : "Proxy Requests"
 @enduml
