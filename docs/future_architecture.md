@@ -1,0 +1,93 @@
+@startuml
+!define osaPuml https://raw.githubusercontent.com/Crashedmind/PlantUML-opensecurityarchitecture2-icons/master
+!include osaPuml/Common.puml
+!include osaPuml/Hardware/all.puml
+!include osaPuml/Server/all.puml
+!include osaPuml/Site/all.puml
+
+' Services
+package "Auth Service" {
+    osa_server(auth, "Auth Service", "FastAPI + PostgreSQL")
+}
+
+package "Django Admin" {
+    osa_server(django_admin, "Django Admin", "Django + PostgreSQL")
+}
+package "Movie search" {
+    osa_server(movie_search, "Movie search", "FastAPI")
+}
+package "File API Service" {
+    osa_server(file_api, "File API Service", "FastAPI + Minio")
+}
+package "ETL Service" {
+    osa_server(etl, "ETL Service", "Python + PostgreSQL + Elasticsearch")
+}
+package "Rate Limit Service" {
+    osa_server(rate_limit, "Rate Limit Service", "Custom")
+}
+package "Nginx" {
+    osa_server(nginx, "Nginx", "Reverse Proxy")
+}
+
+package "UGC Service" {
+    osa_server(ugc_api, "UGC API", "Flask + Kafka")
+    osa_server(ugc_etl, "UGC ETL", "Kafka -> ClickHouse")
+}
+
+' Jaeger Tracing
+osa_server(jaeger, "Jaeger", "Tracing")
+
+' Databases
+package "Databases" {
+    database "PostgreSQL" as db
+    database "Elasticsearch" as elasticsearch
+    collections "Redis" as redis
+    storage "Minio" as minio
+    database "ClickHouse" as clickhouse
+    database "Kafka" as kafka
+}
+
+' Increase size of storage elements
+skinparam database {
+  BackgroundColor Yellow
+  FontSize 25
+  FontColor Black
+}
+skinparam collections {
+  BackgroundColor LightBlue
+  FontSize 25
+  FontColor Black
+}
+skinparam storage {
+  BackgroundColor LightGreen
+  FontSize 25
+  FontColor Black
+}
+
+' Connections
+auth --> db : "Read/Write User Data"
+auth --> redis : "Cache Tokens"
+auth --> jaeger : "Tracing Data"
+auth --> movie_search : "User Auth"
+auth --> django_admin : "Admin Auth"
+django_admin --> db : "Read/Write Admin Data"
+movie_search --> db : "Read/Write Movie Data"
+movie_search --> elasticsearch : "Search Movie Data"
+movie_search --> redis : "Cache Search Results"
+file_api --> minio : "Store/Fetch Files"
+file_api --> db : "Read/Write File Metadata"
+etl --> db : "Extract Data"
+etl --> elasticsearch : "Load Data"
+rate_limit --> movie_search : "Rate Limiting"
+rate_limit --> auth : "Rate Limiting"
+nginx --> auth : "Proxy Requests"
+nginx --> movie_search : "Proxy Requests"
+nginx --> rate_limit : "Proxy Requests"
+nginx --> django_admin : "Proxy Requests"
+nginx --> file_api : "Proxy Requests"
+
+' New Connections for UGC Service
+ugc_api --> kafka : "Send User Events"
+ugc_etl --> kafka : "Consume User Events"
+ugc_etl --> clickhouse : "Load User Events Data"
+@enduml
