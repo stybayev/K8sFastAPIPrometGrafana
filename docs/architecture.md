@@ -13,8 +13,8 @@ package "Auth Service" {
 package "Django Admin" {
     osa_server(django_admin, "Django Admin", "Django + PostgreSQL")
 }
-package "App Service" {
-    osa_server(app, "App Service", "FastAPI")
+package "Movie search" {
+    osa_server(movie_search, "Movie search", "FastAPI")
 }
 package "File API Service" {
     osa_server(file_api, "File API Service", "FastAPI + Minio")
@@ -45,17 +45,17 @@ auth --> db
 auth --> redis
 auth --> jaeger
 django_admin --> db
-app --> db
-app --> elasticsearch
-app --> redis
+movie_search --> db
+movie_search --> elasticsearch
+movie_search --> redis
 file_api --> minio
 file_api --> db
 etl --> db
 etl --> elasticsearch
 etl --> redis
-rate_limit --> app
+rate_limit --> movie_search
 rate_limit --> auth
-nginx --> app
+nginx --> movie_search
 nginx --> auth
 nginx --> rate_limit
 nginx --> django_admin
