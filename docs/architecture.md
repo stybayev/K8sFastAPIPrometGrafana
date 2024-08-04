@@ -43,6 +43,7 @@ package "Databases" {
 ' Connections
 auth --> db
 auth --> redis
+auth --> jaeger
 django_admin --> db
 app --> db
 app --> elasticsearch
