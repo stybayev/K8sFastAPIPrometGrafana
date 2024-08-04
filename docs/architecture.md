@@ -9,9 +9,7 @@
 package "Auth Service" {
     osa_server(auth, "Auth Service", "FastAPI + PostgreSQL")
 }
-package "API Migrations" {
-    osa_server(api_migrations, "API Migrations", "Alembic")
-}
+
 package "Django Admin" {
     osa_server(django_admin, "Django Admin", "Django + PostgreSQL")
 }
@@ -45,8 +43,6 @@ package "Databases" {
 ' Connections
 auth --> db
 auth --> redis
-api_migrations --> db
-api_migrations --> redis
 django_admin --> db
 app --> db
 app --> elasticsearch
@@ -61,5 +57,7 @@ rate_limit --> auth
 nginx --> app
 nginx --> auth
 nginx --> rate_limit
+nginx --> django_admin
+nginx --> file_api
 
 @enduml
