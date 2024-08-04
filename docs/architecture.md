@@ -28,9 +28,9 @@ package "Rate Limit Service" {
 package "Nginx" {
     osa_server(nginx, "Nginx", "Reverse Proxy")
 }
-package "Jaeger" {
-    osa_server(jaeger, "Jaeger", "Tracing")
-}
+
+' Jaeger Tracing
+osa_server(jaeger, "Jaeger", "Tracing")
 
 ' Databases
 package "Databases" {
@@ -44,6 +44,8 @@ package "Databases" {
 auth --> db
 auth --> redis
 auth --> jaeger
+auth --> movie_search
+auth --> django_admin
 django_admin --> db
 movie_search --> db
 movie_search --> elasticsearch
@@ -55,8 +57,8 @@ etl --> elasticsearch
 etl --> redis
 rate_limit --> movie_search
 rate_limit --> auth
-nginx --> movie_search
 nginx --> auth
+nginx --> movie_search
 nginx --> rate_limit
 nginx --> django_admin
 nginx --> file_api
