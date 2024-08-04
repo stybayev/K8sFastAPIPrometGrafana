@@ -34,33 +34,48 @@ osa_server(jaeger, "Jaeger", "Tracing")
 
 ' Databases
 package "Databases" {
-    osa_server(db, "PostgreSQL", "Database")
-    osa_server(elasticsearch, "Elasticsearch", "Database")
-    osa_server(redis, "Redis", "Cache")
-    osa_server(minio, "Minio", "Object Storage")
+    database "PostgreSQL" as db
+    database "Elasticsearch" as elasticsearch
+    collections "Redis" as redis
+    storage "Minio" as minio
+}
+
+' Increase size of storage elements
+skinparam database {
+  BackgroundColor Yellow
+  FontSize 25
+  FontColor Black
+}
+skinparam collections {
+  BackgroundColor LightBlue
+  FontSize 25
+  FontColor Black
+}
+skinparam storage {
+  BackgroundColor LightGreen
+  FontSize 25
+  FontColor Black
 }
 
 ' Connections
-auth --> db
-auth --> redis
-auth --> jaeger
-auth --> movie_search
-auth --> django_admin
-django_admin --> db
-movie_search --> db
-movie_search --> elasticsearch
-movie_search --> redis
-file_api --> minio
-file_api --> db
-etl --> db
-etl --> elasticsearch
-etl --> redis
-rate_limit --> movie_search
-rate_limit --> auth
-nginx --> auth
-nginx --> movie_search
-nginx --> rate_limit
-nginx --> django_admin
-nginx --> file_api
-
+auth --> db : "Read/Write User Data"
+auth --> redis : "Cache Tokens"
+auth --> jaeger : "Tracing Data"
+auth --> movie_search : "User Auth"
+auth --> django_admin : "Admin Auth"
+django_admin --> db : "Read/Write Admin Data"
+movie_search --> db : "Read/Write Movie Data"
+movie_search --> elasticsearch : "Search Movie Data"
+movie_search --> redis : "Cache Search Results"
+file_api --> minio : "Store/Fetch Files"
+file_api --> db : "Read/Write File Metadata"
+etl --> db : "Extract Data"
+etl --> elasticsearch : "Load Data"
+rate_limit --> movie_search : "Rate Limiting"
+rate_limit --> auth : "Rate Limiting"
+nginx --> auth : "Proxy Requests"
+nginx --> movie_search : "Proxy Requests"
+nginx --> rate_limit : "Proxy Requests"
+nginx --> django_admin : "Proxy Requests"
+nginx --> file_api : "Proxy Requests"
 @enduml
