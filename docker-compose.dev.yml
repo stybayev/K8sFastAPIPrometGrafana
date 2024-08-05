@@ -85,6 +85,20 @@ services:
       - minio
       - db
 
+  ugc_service:
+    container_name: ugc_service
+    build: ./ugc_service
+    <<: *app
+    volumes:
+      - .:/ugc_service
+    ports:
+      - "8084:8084"
+    depends_on:
+      - db
+      - kafka-0
+      - kafka-1
+      - kafka-2
+
   etl:
     container_name: etl
     build: ./etl/postgres_to_es
