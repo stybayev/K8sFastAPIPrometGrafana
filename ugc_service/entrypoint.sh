@@ -9,6 +9,5 @@
 # python manage.py collectstatic --noinput
 
 # Start Gunicorn
-echo "Starting Gunicorn..."
-gunicorn -w 4 -k gevent -b 0.0.0.0:8084 main:app
-
+echo "Starting Gevent WSGI Server..."
+python pywsgi.py
