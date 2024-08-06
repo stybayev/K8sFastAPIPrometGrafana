@@ -1,10 +1,6 @@
 from flask import Flask
-from core.config import settings
+from api.tracking import api
+
 app = Flask(__name__)
 
-
-@app.route('/hello-world')
-def hello_world():
-    print('Hello, World!')
-    print(settings.project_name)
-    return 'Hello, World!'
+app.register_blueprint(api, url_prefix='/tracking')
