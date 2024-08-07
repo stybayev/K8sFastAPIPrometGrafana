@@ -1,6 +1,5 @@
 from flask import Blueprint, request, jsonify
-
-# from ..core.config import settings
+from core.config import settings
 
 api = Blueprint('api', __name__)
 
@@ -13,7 +12,7 @@ def hello_world():
 @api.route('/config', methods=['GET'])
 def get_config():
     return jsonify({
-        # "project_name": settings.project_name,
-        # "uvicorn_host": settings.uvicorn_host,
-        # "uvicorn_port": settings.uvicorn_port
+        "service_name": settings.service_name,
+        "service_uvicorn_host": settings.service_uvicorn_host,
+        "service_uvicorn_port": settings.service_uvicorn_port
     })
