@@ -3,3 +3,5 @@ gevent==24.2.1
 gunicorn==22.0.0
 pydantic==2.8.2
 pydantic-settings==2.4.0
+flasgger==0.9.7.1
+Flask-RESTful==0.3.10
