@@ -1,57 +1,42 @@
 from flask import Blueprint, request, jsonify
-from flasgger import swag_from
-from core.config import settings
 
 api = Blueprint('api', __name__)
 
-@api.route('/hello-world', methods=['GET'])
-@swag_from({
-    'responses': {
-        200: {
-            'description': 'Returns a greeting message',
-            'schema': {
-                'type': 'object',
-                'properties': {
-                    'message': {
-                        'type': 'string',
-                        'example': 'Hello, World!'
-                    }
-                }
-            }
-        }
-    }
-})
-def hello_world():
-    return jsonify({"message": "Hello, World!"})
 
-@api.route('/config', methods=['GET'])
-@swag_from({
-    'responses': {
-        200: {
-            'description': 'Returns service configuration',
-            'schema': {
-                'type': 'object',
-                'properties': {
-                    'service_name': {
-                        'type': 'string',
-                        'example': 'my_service'
-                    },
-                    'service_uvicorn_host': {
-                        'type': 'string',
-                        'example': '127.0.0.1'
-                    },
-                    'service_uvicorn_port': {
-                        'type': 'integer',
-                        'example': 8000
-                    }
-                }
-            }
-        }
+@api.route('/colors/<palette>/')
+def colors(palette):
+    """Example endpoint returning a list of colors by palette
+    ---
+    parameters:
+      - name: palette
+        in: path
+        type: string
+        enum: ['all', 'rgb', 'cmyk']
+        required: true
+        default: all
+    responses:
+      200:
+        description: A list of colors (may be filtered by palette)
+        schema:
+          id: Palette
+          type: object
+          properties:
+            palette_name:
+              type: array
+              items:
+                schema:
+                  id: Color
+                  type: string
+        examples:
+          rgb: ['red', 'green', 'blue']
+    """
+    all_colors = {
+        'cmyk': ['cyan', 'magenta', 'yellow', 'black'],
+        'rgb': ['red', 'green', 'blue']
     }
-})
-def get_config():
-    return jsonify({
-        "service_name": settings.service_name,
-        "service_uvicorn_host": settings.service_uvicorn_host,
-        "service_uvicorn_port": settings.service_uvicorn_port
-    })
+    if palette == 'all':
+        result = all_colors
+    else:
+        result = {palette: all_colors.get(palette)}
+
+    return jsonify(result)
