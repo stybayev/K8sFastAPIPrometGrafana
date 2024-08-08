@@ -3,40 +3,49 @@ from flask import Blueprint, request, jsonify
 api = Blueprint('api', __name__)
 
 
-@api.route('/colors/<palette>/')
-def colors(palette):
-    """Example endpoint returning a list of colors by palette
+@api.route('/track_event/', methods=['POST'])
+def track_event():
+    """
+    Endpoint for tracking user events
     ---
     parameters:
-      - name: palette
-        in: path
+      - name: user_id
+        in: query
         type: string
-        enum: ['all', 'rgb', 'cmyk']
         required: true
-        default: all
+      - name: event_type
+        in: query
+        type: string
+        required: true
+      - name: timestamp
+        in: query
+        type: string
+        required: true
+      - name: data
+        in: body
+        type: object
+        required: true
+      - name: source
+        in: query
+        type: string
+        required: true
     responses:
       200:
-        description: A list of colors (may be filtered by palette)
-        schema:
-          id: Palette
-          type: object
-          properties:
-            palette_name:
-              type: array
-              items:
-                schema:
-                  id: Color
-                  type: string
-        examples:
-          rgb: ['red', 'green', 'blue']
+        description: Event tracked successfully
     """
-    all_colors = {
-        'cmyk': ['cyan', 'magenta', 'yellow', 'black'],
-        'rgb': ['red', 'green', 'blue']
-    }
-    if palette == 'all':
-        result = all_colors
-    else:
-        result = {palette: all_colors.get(palette)}
+    user_id = request.args.get('user_id')
+    event_type = request.args.get('event_type')
+    timestamp = request.args.get('timestamp')
+    data = request.json.get('data')
+    source = request.args.get('source')
 
-    return jsonify(result)
+    # Here you would process the incoming data
+    # For now, we will just return the received data
+    event = {
+        "user_id": user_id,
+        "event_type": event_type,
+        "timestamp": timestamp,
+        "data": data,
+        "source": source
+    }
+    return jsonify({"status": "success", "event": event}), 200
