@@ -28,17 +28,24 @@ def configure_swagger(app):
         "schemes": [
             "http"
         ],
+        "securityDefinitions": {
+            "Bearer": {
+                "type": "apiKey",
+                "name": "Authorization",
+                "in": "header",
+                "description": "JWT Authorization header using the Bearer scheme. Example: 'Authorization: Bearer {token}'",
+            }
+        },
+        "security": [
+            {
+                "Bearer": []
+            }
+        ],
         "paths": {
             "/track_event/": {
                 "post": {
                     "summary": "Track user event",
                     "parameters": [
-                        {
-                            "name": "user_id",
-                            "in": "query",
-                            "type": "string",
-                            "required": True
-                        },
                         {
                             "name": "event_type",
                             "in": "query",
@@ -64,6 +71,13 @@ def configure_swagger(app):
                             "in": "query",
                             "type": "string",
                             "required": True
+                        },
+                        {
+                            "name": "Authorization",
+                            "in": "header",
+                            "type": "string",
+                            "required": True,
+                            "description": "JWT Token for Authorization",
                         }
                     ],
                     "responses": {

@@ -11,10 +11,11 @@ def track_event():
     Endpoint for tracking user events
     ---
     parameters:
-      - name: user_id
-        in: query
+      - name: Authorization
+        in: header
         type: string
         required: true
+        description: "JWT Token"
       - name: event_type
         in: query
         type: string
