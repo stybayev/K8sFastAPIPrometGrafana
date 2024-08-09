@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     # JWT
     jwt_secret_key: str
 
+    # Redis
+    redis_host: str
+    redis_port: int
+
 
 settings = Settings()
 
