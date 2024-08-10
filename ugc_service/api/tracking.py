@@ -1,53 +1,73 @@
-from flask import Blueprint, request, jsonify
+from typing import Any
+
+from flask import Blueprint, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_pydantic import validate
+from flasgger import swag_from
+
+from schema.event import EventData, EventResponse
 
 api = Blueprint('api', __name__)
 
 
 @api.route('/track_event/', methods=['POST'])
 @jwt_required()
-def track_event():
+@validate()
+@swag_from({
+    "parameters": [
+        {
+            "name": "Authorization",
+            "in": "header",
+            "type": "string",
+            "required": True,
+            "description": "JWT Token for Authorization"
+        },
+        {
+            "name": "body",
+            "in": "body",
+            "required": True,
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "event_type": {
+                        "type": "string",
+                        "description": "Type of the event"
+                    },
+                    "timestamp": {
+                        "type": "string",
+                        "description": "Timestamp of the event"
+                    },
+                    "data": {
+                        "type": "object",
+                        "description": "Additional data for the event"
+                    },
+                    "source": {
+                        "type": "string",
+                        "description": "Source of the event"
+                    }
+                },
+                "required": ["event_type", "timestamp", "data", "source"]
+            },
+            "description": "Event data in body"
+        }
+    ],
+    "responses": {
+        "200": {
+            "description": "Event tracked successfully"
+        }
+    }
+})
+def track_event(body: EventData) -> tuple[Any, int]:
     """
-    Endpoint for tracking user events
-    ---
-    parameters:
-      - name: Authorization
-        in: header
-        type: string
-        required: true
-        description: "JWT Token"
-      - name: event_type
-        in: query
-        type: string
-        required: true
-      - name: timestamp
-        in: query
-        type: string
-        required: true
-      - name: data
-        in: body
-        type: object
-        required: true
-      - name: source
-        in: query
-        type: string
-        required: true
-    responses:
-      200:
-        description: Event tracked successfully
+    Эндпоинт для отслеживания пользовательских событий
     """
     user_id = get_jwt_identity()
-    event_type = request.args.get('event_type')
-    timestamp = request.args.get('timestamp')
-    data = request.json.get('data')
-    source = request.args.get('source')
 
-    # Здесь вы можете обработать входящие данные
     event = {
         "user_id": user_id,
-        "event_type": event_type,
-        "timestamp": timestamp,
-        "data": data,
-        "source": source
+        **body.dict()
     }
-    return jsonify({"status": "success", "event": event}), 200
+
+    response = EventResponse(**event)
+
+    return jsonify(response.dict()), 200

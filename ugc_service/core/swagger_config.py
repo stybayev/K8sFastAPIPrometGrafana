@@ -47,37 +47,39 @@ def configure_swagger(app):
                     "summary": "Track user event",
                     "parameters": [
                         {
-                            "name": "event_type",
-                            "in": "query",
-                            "type": "string",
-                            "required": True
-                        },
-                        {
-                            "name": "timestamp",
-                            "in": "query",
-                            "type": "string",
-                            "required": True
-                        },
-                        {
-                            "name": "data",
-                            "in": "body",
-                            "required": True,
-                            "schema": {
-                                "type": "object"
-                            }
-                        },
-                        {
-                            "name": "source",
-                            "in": "query",
-                            "type": "string",
-                            "required": True
-                        },
-                        {
                             "name": "Authorization",
                             "in": "header",
                             "type": "string",
                             "required": True,
                             "description": "JWT Token for Authorization",
+                        },
+                        {
+                            "name": "body",
+                            "in": "body",
+                            "required": True,
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "event_type": {
+                                        "type": "string",
+                                        "description": "Type of the event"
+                                    },
+                                    "timestamp": {
+                                        "type": "string",
+                                        "description": "Timestamp of the event"
+                                    },
+                                    "data": {
+                                        "type": "object",
+                                        "description": "Additional data for the event"
+                                    },
+                                    "source": {
+                                        "type": "string",
+                                        "description": "Source of the event"
+                                    }
+                                },
+                                "required": ["event_type", "timestamp", "data", "source"]
+                            },
+                            "description": "Event data in body"
                         }
                     ],
                     "responses": {
