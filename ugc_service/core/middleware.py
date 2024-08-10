@@ -1,6 +1,6 @@
-from flask import jsonify
 from flask_jwt_extended import verify_jwt_in_request, get_jwt
 from redis import Redis
+from flask import request, jsonify
 
 from core.config import settings
 
@@ -11,6 +11,11 @@ def check_blacklist() -> jsonify:
     """
     Функция для проверки токена в Redis
     """
+    if (request.path.startswith('/apidocs')
+            or request.path.startswith('/apispec')
+            or request.path.startswith('/flasgger_static')):
+        return None
+
     try:
         verify_jwt_in_request()
         jti = get_jwt().get("jti")
