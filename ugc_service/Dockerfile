@@ -1,16 +1,24 @@
 FROM --platform=linux/amd64 python:3.10-slim-buster
+
+# Устанавливаем переменную окружения для отключения буферизации вывода
 ENV PYTHONUNBUFFERED=1
-WORKDIR /ugc
-COPY requirements.txt /ugc
-RUN /usr/local/bin/python -m pip install --upgrade pip
-RUN apt-get update -y
-RUN apt-get install gcc -y
-RUN pip install -r requirements.txt
-COPY . /ugc
 
-# Добавляем entrypoint.sh
-COPY entrypoint.sh /ugc/entrypoint.sh
+# Задаем рабочую директорию
+WORKDIR /ugc_service
 
-RUN chmod +x /ugc/entrypoint.sh
+# Копируем файл с зависимостями
+COPY requirements.txt /ugc_service
 
-ENTRYPOINT ["/ugc/entrypoint.sh"]
+# Обновляем pip и устанавливаем системные зависимости
+RUN /usr/local/bin/python -m pip install --upgrade pip && \
+    apt-get update -y && \
+    apt-get install -y --no-install-recommends gcc curl netcat && \
+    pip install -r requirements.txt && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Копируем исходный код в контейнер
+COPY . /ugc_service
+
+# Определяем команду запуска контейнера
+CMD ["sh", "-c", "echo 'Starting Gevent WSGI Server...' && python ugc_service/pywsgi.py"]
