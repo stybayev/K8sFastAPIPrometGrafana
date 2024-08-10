@@ -1,5 +1,52 @@
 from flasgger import Swagger
 
+# swagger_specs.py
+
+track_event_spec = {
+    "parameters": [
+        {
+            "name": "Authorization",
+            "in": "header",
+            "type": "string",
+            "required": True,
+            "description": "JWT Token for Authorization"
+        },
+        {
+            "name": "body",
+            "in": "body",
+            "required": True,
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "event_type": {
+                        "type": "string",
+                        "description": "Type of the event"
+                    },
+                    "timestamp": {
+                        "type": "string",
+                        "description": "Timestamp of the event"
+                    },
+                    "data": {
+                        "type": "object",
+                        "description": "Additional data for the event"
+                    },
+                    "source": {
+                        "type": "string",
+                        "description": "Source of the event"
+                    }
+                },
+                "required": ["event_type", "timestamp", "data", "source"]
+            },
+            "description": "Event data in body"
+        }
+    ],
+    "responses": {
+        "200": {
+            "description": "Event tracked successfully"
+        }
+    }
+}
+
 
 def configure_swagger(app):
     swagger_config = {
@@ -45,48 +92,7 @@ def configure_swagger(app):
             "/track_event/": {
                 "post": {
                     "summary": "Track user event",
-                    "parameters": [
-                        {
-                            "name": "Authorization",
-                            "in": "header",
-                            "type": "string",
-                            "required": True,
-                            "description": "JWT Token for Authorization",
-                        },
-                        {
-                            "name": "body",
-                            "in": "body",
-                            "required": True,
-                            "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "event_type": {
-                                        "type": "string",
-                                        "description": "Type of the event"
-                                    },
-                                    "timestamp": {
-                                        "type": "string",
-                                        "description": "Timestamp of the event"
-                                    },
-                                    "data": {
-                                        "type": "object",
-                                        "description": "Additional data for the event"
-                                    },
-                                    "source": {
-                                        "type": "string",
-                                        "description": "Source of the event"
-                                    }
-                                },
-                                "required": ["event_type", "timestamp", "data", "source"]
-                            },
-                            "description": "Event data in body"
-                        }
-                    ],
-                    "responses": {
-                        "200": {
-                            "description": "Event tracked successfully"
-                        }
-                    }
+                    **track_event_spec
                 }
             }
         }
