@@ -6,6 +6,19 @@ from flask_pydantic import validate
 from flasgger import swag_from
 
 from schema.event import EventData, EventResponse
+from kafka import KafkaProducer
+import json
+
+producer = KafkaProducer(bootstrap_servers=['kafka-0:9092'])
+
+
+def send_to_kafka(topic: str, key: str, value: dict):
+    producer.send(
+        topic=topic,
+        key=key.encode('utf-8'),
+        value=json.dumps(value).encode('utf-8')
+    )
+
 
 api = Blueprint('api', __name__)
 
@@ -63,11 +76,32 @@ def track_event(body: EventData) -> tuple[Any, int]:
     """
     user_id = get_jwt_identity()
 
+    # Логика определения топика в зависимости от типа события
+    event_type = body.event_type
+    if event_type == "click":
+        topic = "click-events"
+    elif event_type == "page_view":
+        topic = "page-view-events"
+    elif event_type == "custom_event":
+        topic = "custom-events"
+    else:
+        return jsonify({"status": "error", "message": "Unknown event type"}), 400
+
     event = {
         "user_id": user_id,
         **body.dict()
     }
 
-    response = EventResponse(**event)
+    # Отправляем событие в соответствующий топик Kafka
+    send_to_kafka(topic, key=user_id, value=event)
+
+    # Создаем корректный EventResponse, передавая все нужные данные напрямую
+    response = EventResponse(
+        user_id=user_id,
+        event_type=body.event_type,
+        timestamp=body.timestamp,
+        data=body.data,
+        source=body.source
+    )
 
     return jsonify(response.dict()), 200
