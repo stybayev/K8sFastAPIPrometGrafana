@@ -1,8 +1,12 @@
 from typing import Dict, Any
 from flask_jwt_extended import get_jwt_identity
 from functools import lru_cache
+from kafka.errors import NoBrokersAvailable
 from core.kafka import get_kafka_producer, send_to_kafka
 from schema.event import EventResponse
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class EventService:
@@ -35,9 +39,12 @@ class EventService:
             **body
         }
 
-        # Отправляем событие в соответствующий топик Kafka
-        with get_kafka_producer() as producer:
-            send_to_kafka(producer, topic, key=user_id, value=event)
+        try:
+            with get_kafka_producer() as producer:
+                send_to_kafka(producer, topic, key=user_id, value=event)
+        except NoBrokersAvailable:
+            logger.error("Kafka brokers are not available. Event will not be sent.")
+            raise
 
         # Возвращаем ответ
         response = EventResponse(

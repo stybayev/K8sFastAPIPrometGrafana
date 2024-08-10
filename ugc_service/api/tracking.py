@@ -6,6 +6,7 @@ from flask_pydantic import validate
 from flasgger import swag_from
 from schema.event import EventData, EventResponse
 from core.swagger_config import track_event_spec
+from kafka.errors import NoBrokersAvailable
 
 from services.tracking import get_event_service
 
@@ -26,3 +27,6 @@ def track_event(body: EventData) -> tuple[Any, int]:
         return jsonify(response.dict()), 200
     except ValueError as e:
         return jsonify({"status": "error", "message": str(e)}), 400
+    except NoBrokersAvailable:
+        return jsonify(
+            {"status": "error", "message": "Service is temporarily unavailable. Please try again later."}), 503
