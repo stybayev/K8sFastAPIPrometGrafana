@@ -34,7 +34,7 @@
 
 #### Роуты:
 
-#### 1 External Track Event (/external_track_event/)
+#### 1 External Track Event (http://127.0.0.1/api/ugc/tracking/external_track_event/)
 
 Эндпоинт для отслеживания пользовательских событий. Предполагает использование JWT-аутентификации.
 
@@ -55,7 +55,7 @@
 - 400 Bad Request: Неизвестный тип события.
 - 503 Service Unavailable: Сервис временно недоступен (например, Kafka не отвечает).
 
-#### 2 - Internal Track Event (/internal_track_event/)
+#### 2 - Internal Track Event (http://127.0.0.1/api/ugc/tracking/internal_track_event/)
 
 Внутренний эндпоинт для отслеживания событий между микросервисами. JWT-аутентификация не требуется.
 
@@ -75,6 +75,12 @@
 - 200 OK: Событие успешно отслежено.
 - 400 Bad Request: Неизвестный тип события.
 - 503 Service Unavailable: Сервис временно недоступен (например, Kafka не отвечает).
+
+**Адрес:**
+
+```
+http://0.0.0.0:8084/apidocs/
+```
 
 ### Сервис Auth
 
