@@ -100,20 +100,6 @@ services:
       - kafka-1
       - kafka-2
 
-  etl_kafka_clickhouse:
-    container_name: etl_kafka_clickhouse
-    build: ./etl_kafka_clickhouse
-    <<: *app
-    depends_on:
-      - ugc_service
-      - kafka-0
-      - kafka-1
-      - kafka-2
-      - clickhouse-node1
-      - clickhouse-node2
-      - clickhouse-node3
-      - clickhouse-node4
-
   etl:
     container_name: etl
     build: ./etl/postgres_to_es
@@ -328,3 +314,17 @@ services:
       - ./clickhouse/data/node4:/etc/clickhouse-server
     depends_on:
       - zookeeper
+
+  etl_kafka_clickhouse:
+    container_name: etl_kafka_clickhouse
+    build: ./etl_kafka_clickhouse
+    <<: *app
+    depends_on:
+      - ugc_service
+      - kafka-0
+      - kafka-1
+      - kafka-2
+      - clickhouse-node1
+      - clickhouse-node2
+      - clickhouse-node3
+      - clickhouse-node4
