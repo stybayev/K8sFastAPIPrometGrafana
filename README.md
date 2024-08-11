@@ -2,11 +2,11 @@
 
 1) Клонируем репозиторий:
    ```
-   git clone git@github.com:stybayev/Auth_sprint_2.git
+   git clone git@github.com:stybayev/UGC_sprint_1.git
    ```
-2) Заходим в корневую директрию проекта `/Auth_sprint_2`:
+2) Заходим в корневую директрию проекта `/UGC_sprint_1`:
    ```
-   cd Auth_sprint_2
+   cd UGC_sprint_1
    ```
 3) Создаем файл `.env` и копируем в него содержимое файла `.env.example`:
    ```
@@ -34,7 +34,7 @@
 
 #### Роуты:
 
-1 External Track Event (/external_track_event/)
+#### 1 External Track Event (/external_track_event/)
 
 Эндпоинт для отслеживания пользовательских событий. Предполагает использование JWT-аутентификации.
 
@@ -55,7 +55,7 @@
 - 400 Bad Request: Неизвестный тип события.
 - 503 Service Unavailable: Сервис временно недоступен (например, Kafka не отвечает).
 
-2 - Internal Track Event (/internal_track_event/)
+#### 2 - Internal Track Event (/internal_track_event/)
 
 Внутренний эндпоинт для отслеживания событий между микросервисами. JWT-аутентификация не требуется.
 
