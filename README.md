@@ -179,6 +179,30 @@ http://127.0.0.1:16686
 
 ***
 
+### ETL Kafka to Clickhouse
+
+Сервис для записи сообщений из Kafka в Clickhouse. Необходимые настройки для сервиса находятся в файле .env:
+```yml
+# ==== ETL KAFKA CLICKHOUSE ====
+CLICKHOUSE_PORT=8123
+CLICKHOUSE_POLL_RECORDS=10  # Количество сообщений которое будет записываться в Clickhouse
+KAFKA_BOOTSTRAP_SERVERS=kafka-0:9092,kafka-1:9092,kafka-2:9092  # Ноды Kafka
+KAFKA_TOPICS=click-events,page-view-events,custom_event   # Топики Kafka
+CONSUMER_GROUP_ID=movies  # Идентификатор группы потребителя (consumer)
+```
+```python
+consumer = AIOKafkaConsumer(
+            *topics,
+            bootstrap_servers=bootstrap_servers,
+            group_id='movies',
+            enable_auto_commit=False,  # Отключаем авто-подтверждение смещений
+            auto_offset_reset='earliest',
+            max_poll_records=poll_records
+        )
+```
+Автоматическое смещение в консумере отключено, смещение происходит только после успешного сохранения данных в Clickhouse.
+Это сделано для сохранения порядка загрузки данных при потере связи с Clickhouse и последующем восстановлении. 
+
 ## Инструкция по запуску тестов
 
 1. **Переход в директорию тестов:**
