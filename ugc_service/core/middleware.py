@@ -6,14 +6,19 @@ from core.config import settings
 
 redis_client = Redis(host=settings.redis_host, port=settings.redis_port)
 
+EXCLUDED_PATHS = [
+    '/apidocs',
+    '/apispec',
+    '/flasgger_static',
+    '/tracking/internal_track_event'
+]
+
 
 def check_blacklist() -> jsonify:
     """
     Функция для проверки токена в Redis
     """
-    if (request.path.startswith('/apidocs')
-            or request.path.startswith('/apispec')
-            or request.path.startswith('/flasgger_static')):
+    if any(request.path.startswith(path) for path in EXCLUDED_PATHS):
         return None
 
     try:

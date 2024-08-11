@@ -1,7 +1,5 @@
 from flasgger import Swagger
 
-# swagger_specs.py
-
 track_event_spec = {
     "parameters": [
         {
@@ -47,6 +45,49 @@ track_event_spec = {
     }
 }
 
+internal_track_event_spec = {
+    "parameters": [
+        {
+            "name": "body",
+            "in": "body",
+            "required": True,
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "user_id": {
+                        "type": "string",
+                        "description": "ID of the user"
+                    },
+                    "event_type": {
+                        "type": "string",
+                        "description": "Type of the event"
+                    },
+                    "timestamp": {
+                        "type": "string",
+                        "description": "Timestamp of the event"
+                    },
+                    "data": {
+                        "type": "object",
+                        "description": "Additional data for the event"
+                    },
+                    "source": {
+                        "type": "string",
+                        "description": "Source of the event"
+                    }
+                },
+                "required": ["user_id", "event_type", "timestamp", "data", "source"]
+            },
+            "description": "Event data in body"
+        }
+    ],
+    "responses": {
+        "200": {
+            "description": "Event tracked successfully"
+        }
+    },
+    "security": []
+}
+
 
 def configure_swagger(app):
     swagger_config = {
@@ -89,10 +130,16 @@ def configure_swagger(app):
             }
         ],
         "paths": {
-            "/track_event/": {
+            "/external_track_event/": {
                 "post": {
-                    "summary": "Track user event",
+                    "summary": "Track external user event",
                     **track_event_spec
+                }
+            },
+            "/internal_track_event/": {
+                "post": {
+                    "summary": "Track internal user event",
+                    **internal_track_event_spec
                 }
             }
         }
