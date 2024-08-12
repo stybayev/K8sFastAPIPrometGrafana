@@ -1,0 +1,55 @@
+version: '3.5'
+
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:23
+    container_name: clickhouse
+    hostname: clickhouse
+    ports:
+      - ${CLICKHOUSE_PORT}:${CLICKHOUSE_PORT}
+      - ${CLICKHOUSE_TCP_PORT}:${CLICKHOUSE_TCP_PORT}
+    volumes:
+      - ./clickhouse:/etc/clickhouse-server
+    networks:
+      - main_network
+
+  vertica:
+    image: jbfavre/vertica:latest
+    container_name: vertica
+    hostname: vertica
+    healthcheck:
+      test: [ "CMD-SHELL", "/opt/vertica/bin/vsql -U $VERTICA_USER -w $DB_PASSWORD $VERTICA_DB -c 'SELECT * FROM $NAME_FEW_TABLE_VERTICA'" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    env_file:
+      - .env
+    volumes:
+      - ./vertica/data:/data
+      - ./vertica/init.sh:/docker-entrypoint-initdb.d/init.sh
+    ports:
+      - ${VERTICA_PORT}:${VERTICA_PORT}
+    networks:
+      - main_network
+
+  locust:
+    build: ./locust
+    container_name: locust
+    ports:
+      - ${LOCUST_PORT}:${LOCUST_PORT}
+    env_file:
+      - .env
+    volumes:
+      - ./locust:/locust
+    depends_on:
+      vertica:
+        condition: service_healthy
+      clickhouse:
+        condition: service_started
+    networks:
+      - main_network
+    command: -f /locust/locustfile.py
+
+
+networks:
+  main_network:
