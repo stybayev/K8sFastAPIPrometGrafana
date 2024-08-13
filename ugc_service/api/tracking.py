@@ -7,7 +7,7 @@ from flasgger import swag_from
 from schema.event import EventData, EventResponse, InternalEventData
 from core.swagger_config import track_event_spec, internal_track_event_spec
 from kafka.errors import NoBrokersAvailable
-
+from http import HTTPStatus
 from services.tracking import get_event_service
 
 api = Blueprint('api', __name__)
@@ -24,12 +24,13 @@ def track_event(body: EventData) -> tuple[Any, int]:
     event_service = get_event_service()
     try:
         response = event_service.track_event(body.dict(), user_id=None)
-        return jsonify(response.dict()), 200
+        return jsonify(response.dict()), HTTPStatus.OK
     except ValueError as e:
-        return jsonify({"status": "error", "message": str(e)}), 400
+        return jsonify({"status": "error", "message": str(e)}), HTTPStatus.BAD_REQUEST
     except NoBrokersAvailable:
-        return jsonify(
-            {"status": "error", "message": "Service is temporarily unavailable. Please try again later."}), 503
+        return (jsonify(
+            {"status": "error", "message": "Service is temporarily unavailable. Please try again later."}),
+                HTTPStatus.SERVICE_UNAVAILABLE)
 
 
 @api.route('/internal_track_event/', methods=['POST'])
@@ -42,9 +43,10 @@ def internal_track_event(body: InternalEventData) -> tuple[Any, int]:
     event_service = get_event_service()
     try:
         response = event_service.track_event(body.dict(), user_id=body.user_id)
-        return jsonify(response.dict()), 200
+        return jsonify(response.dict()), HTTPStatus.OK
     except ValueError as e:
-        return jsonify({"status": "error", "message": str(e)}), 400
+        return jsonify({"status": "error", "message": str(e)}), HTTPStatus.BAD_REQUEST
     except NoBrokersAvailable:
-        return jsonify(
-            {"status": "error", "message": "Service is temporarily unavailable. Please try again later."}), 503
+        return (jsonify(
+            {"status": "error", "message": "Service is temporarily unavailable. Please try again later."}),
+                HTTPStatus.SERVICE_UNAVAILABLE)
