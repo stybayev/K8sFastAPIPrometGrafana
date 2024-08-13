@@ -1,12 +1,13 @@
 import asyncio
 import json
 import logging
-import os
 from typing import List, Optional
 
 from aiokafka import AIOKafkaConsumer, ConsumerRecord
 from clickhouse_driver import Client
 from clickhouse_driver.errors import NetworkError, ServerException
+
+from settings import settings
 
 logging.basicConfig(
     level=logging.INFO,
@@ -14,11 +15,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-topics = os.getenv('KAFKA_TOPICS').split(',')
-bootstrap_servers = os.getenv('KAFKA_BOOTSTRAP_SERVERS').split(',')
-group_id = os.getenv('CONSUMER_GROUP_ID')
-poll_records = int(os.getenv('CLICKHOUSE_POLL_RECORDS'))
-
+topics = settings.kafka_topics.split(',')
+bootstrap_servers = settings.kafka_bootstrap_servers.split(',')
+group_id = settings.kafka_consumer_group_id
+poll_records = settings.clickhouse_poll_records
+clickhouse_host = settings.clickhouse_host
+clickhouse_port = settings.clickhouse_port
 
 async def consume() -> None:
     """
@@ -74,7 +76,7 @@ async def save_to_clickhouse(messages: List[ConsumerRecord]) -> bool:
     функция возвращает False, иначе True.
     """
     try:
-        client: Client = Client(host='clickhouse-node1')
+        client: Client = Client(host=clickhouse_host)
 
         data_to_insert: List[tuple] = []
         for message in messages:
