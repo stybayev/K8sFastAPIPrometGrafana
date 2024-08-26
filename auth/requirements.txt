@@ -48,5 +48,5 @@ opentelemetry-sdk==1.25.0
 opentelemetry-instrumentation-fastapi==0.46b0
 opentelemetry-exporter-jaeger==1.21.0
 jaeger-client==4.8.0
-
+pyjwt==1.7.1
 

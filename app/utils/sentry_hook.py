@@ -24,6 +24,8 @@ def before_send(event, hint):
                 event["tags"]["user_id"] = user_data["id"]
             if user_data.get("first_name"):
                 event["tags"]["user_name"] = f"{user_data['first_name']} {user_data.get('last_name', '')}".strip()
+            if user_data.get("anonymous"):
+                event["tags"]["user_name"] = "anonymous"
 
     return event
 

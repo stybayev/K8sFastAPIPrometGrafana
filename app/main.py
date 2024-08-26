@@ -17,7 +17,7 @@ from auth.core.jwt import JWTSettings
 from auth.core.middleware import check_blacklist
 
 sentry_sdk.init(
-    dsn=os.getenv("SENTRY_DSN"),
+    dsn=os.getenv("APP_SENTRY_DSN"),
     traces_sample_rate=1.0,
     profiles_sample_rate=1.0,
     send_default_pii=True,  # Включает передачу данных о пользователе
