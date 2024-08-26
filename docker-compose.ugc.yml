@@ -1,135 +1,176 @@
 version: '3.7'
 
+x-common-shard: &common-shard
+  image: mongo
+  expose:
+    - "27017"
+  volumes:
+    - /etc/localtime:/etc/localtime:ro
+
+x-common-config: &common-config
+  image: mongo
+  command: mongod --configsvr --replSet mongors1conf --dbpath /data/db --port 27017
+  expose:
+    - "27017"
+  volumes:
+    - /etc/localtime:/etc/localtime:ro
+
+x-common-mongos: &common-mongos
+  image: mongo
+  depends_on:
+    - mongocfg1
+    - mongocfg2
+  command: mongos --configdb mongors1conf/mongocfg1:27017,mongocfg2:27017,mongocfg3:27017 --port 27017 --bind_ip_all
+  expose:
+    - "27017"
+  volumes:
+    - /etc/localtime:/etc/localtime:ro
+
 services:
   mongors1n1:
+    <<: *common-shard
     container_name: mongors1n1
-    image: mongo
     command: mongod --shardsvr --replSet mongors1 --dbpath /data/db --port 27017
     ports:
       - 27017:27017
-    expose:
-      - "27017"
     volumes:
-      - /etc/localtime:/etc/localtime:ro
       - shard1_data1:/data/db
 
   mongors1n2:
+    <<: *common-shard
     container_name: mongors1n2
-    image: mongo
     command: mongod --shardsvr --replSet mongors1 --dbpath /data/db --port 27017
     ports:
       - 27027:27017
-    expose:
-      - "27017"
     volumes:
-      - /etc/localtime:/etc/localtime:ro
       - shard1_data2:/data/db
 
   mongors1n3:
+    <<: *common-shard
     container_name: mongors1n3
-    image: mongo
     command: mongod --shardsvr --replSet mongors1 --dbpath /data/db --port 27017
     ports:
       - 27037:27017
-    expose:
-      - "27017"
     volumes:
-      - /etc/localtime:/etc/localtime:ro
       - shard1_data3:/data/db
 
   mongors2n1:
+    <<: *common-shard
     container_name: mongors2n1
-    image: mongo
     command: mongod --shardsvr --replSet mongors2 --dbpath /data/db --port 27017
     ports:
       - 27047:27017
-    expose:
-      - "27017"
     volumes:
-      - /etc/localtime:/etc/localtime:ro
       - shard2_data1:/data/db
 
   mongors2n2:
+    <<: *common-shard
     container_name: mongors2n2
-    image: mongo
     command: mongod --shardsvr --replSet mongors2 --dbpath /data/db --port 27017
     ports:
       - 27057:27017
-    expose:
-      - "27017"
     volumes:
-      - /etc/localtime:/etc/localtime:ro
       - shard2_data2:/data/db
 
   mongors2n3:
+    <<: *common-shard
     container_name: mongors2n3
-    image: mongo
     command: mongod --shardsvr --replSet mongors2 --dbpath /data/db --port 27017
     ports:
       - 27067:27017
-    expose:
-      - "27017"
     volumes:
-      - /etc/localtime:/etc/localtime:ro
       - shard2_data3:/data/db
 
   mongocfg1:
+    <<: *common-config
     container_name: mongocfg1
-    image: mongo
-    command: mongod --configsvr --replSet mongors1conf --dbpath /data/db --port 27017
-    expose:
-      - "27017"
     volumes:
-      - /etc/localtime:/etc/localtime:ro
       - config1_data:/data/db
 
   mongocfg2:
+    <<: *common-config
     container_name: mongocfg2
-    image: mongo
-    command: mongod --configsvr --replSet mongors1conf --dbpath /data/db --port 27017
-    expose:
-      - "27017"
     volumes:
-      - /etc/localtime:/etc/localtime:ro
       - config2_data:/data/db
 
   mongocfg3:
+    <<: *common-config
     container_name: mongocfg3
-    image: mongo
-    command: mongod --configsvr --replSet mongors1conf --dbpath /data/db --port 27017
-    expose:
-      - "27017"
     volumes:
-      - /etc/localtime:/etc/localtime:ro
       - config3_data:/data/db
 
   mongos1:
+    <<: *common-mongos
     container_name: mongos1
-    image: mongo
-    depends_on:
-      - mongocfg1
-      - mongocfg2
-    command: mongos --configdb mongors1conf/mongocfg1:27017,mongocfg2:27017,mongocfg3:27017 --port 27017 --bind_ip_all
     ports:
       - 27019:27017
-    expose:
-      - "27017"
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
 
   mongos2:
+    <<: *common-mongos
     container_name: mongos2
+    ports:
+      - 27020:27017
+
+  init-config-replica:
     image: mongo
     depends_on:
       - mongocfg1
       - mongocfg2
-    command: mongos --configdb mongors1conf/mongocfg1:27017,mongocfg2:27017,mongocfg3:27017 --port 27017 --bind_ip_all
-    ports:
-      - 27020:27017
-    expose:
-      - "27017"
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
+      - mongocfg3
+    entrypoint: >
+      bash -c 'until mongosh --host mongocfg1 --eval "rs.initiate({_id: \"mongors1conf\", configsvr: true, members: [{_id: 0, host: \"mongocfg1\"}, {_id: 1, host: \"mongocfg2\"}, {_id: 2, host: \"mongocfg3\"}]})"; do sleep 5; done'
+    healthcheck:
+      test: [ "CMD", "mongosh", "--host", "mongocfg1", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
+
+  init-replica-set-mongors1:
+    image: mongo
+    depends_on:
+      - mongors1n1
+      - mongors1n2
+      - mongors1n3
+    entrypoint: >
+      bash -c 'until mongosh --host mongors1n1 --eval "rs.initiate({_id: \"mongors1\", members: [{_id: 0, host: \"mongors1n1\"}, {_id: 1, host: \"mongors1n2\"}, {_id: 2, host: \"mongors1n3\"}]})"; do sleep 5; done'
+    healthcheck:
+      test: [ "CMD", "mongosh", "--host", "mongors1n1", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
+
+  init-replica-set-mongors2:
+    image: mongo
+    depends_on:
+      - mongors2n1
+      - mongors2n2
+      - mongors2n3
+    entrypoint: >
+      bash -c 'until mongosh --host mongors2n1 --eval "rs.initiate({_id: \"mongors2\", members: [{_id: 0, host: \"mongors2n1\"}, {_id: 1, host: \"mongors2n2\"}, {_id: 2, host: \"mongors2n3\"}]})"; do sleep 5; done'
+    healthcheck:
+      test: [ "CMD", "mongosh", "--host", "mongors2n1", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
+
+  add-shards:
+    image: mongo
+    depends_on:
+      - mongos1
+      - init-replica-set-mongors1
+      - init-replica-set-mongors2
+    entrypoint: >
+      bash -c 'until mongosh --host mongos1 --eval "sh.addShard(\"mongors1/mongors1n1\")"; do sleep 5; done && \
+               until mongosh --host mongos1 --eval "sh.addShard(\"mongors2/mongors2n1\")"; do sleep 5; done'
+    healthcheck:
+      test: [ "CMD", "mongosh", "--host", "mongos1", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
 
 
 volumes:
