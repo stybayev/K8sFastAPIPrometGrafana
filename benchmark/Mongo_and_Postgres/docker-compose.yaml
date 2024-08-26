@@ -1,0 +1,61 @@
+version: '3.9'
+
+services:
+  mongodb:
+    container_name: mongodb
+    image: mongo
+    env_file:
+      - .env
+    ports:
+      - ${MONGO_PORT}:${MONGO_PORT}
+    volumes:
+      - ./mongo/init.js:/docker-entrypoint-initdb.d/init.js
+      - mongo_data:/data/db
+    restart: unless-stopped
+
+  mongo_importer:
+    env_file:
+      - .env
+    container_name: mongo_importer
+    build: ./mongo
+    depends_on:
+      - mongodb
+
+  postgres:
+    build: ./postgres
+    container_name: postgres
+    shm_size: 1g
+    ports:
+      - ${POSTGRES_PORT}:${POSTGRES_PORT}
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "PGPASSWORD=$POSTGRES_PASSWORD psql -h $POSTGRES_HOST -U $POSTGRES_USER -c 'SELECT * FROM content.likes LIMIT 1'" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  locust:
+    build: ./locust
+    container_name: locust
+    ports:
+      - ${LOCUST_PORT}:${LOCUST_PORT}
+    env_file:
+      - .env
+    volumes:
+      - ./locust:/locust
+    depends_on:
+      mongodb:
+        condition: service_started
+      mongo_importer:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    command: -f /locust/locustfile.py
+
+volumes:
+  mongo_data:
+  postgres_data:
