@@ -1,3 +1,5 @@
+version: '3.7'
+
 services:
   mongors1n1:
     container_name: mongors1n1
@@ -9,7 +11,7 @@ services:
       - "27017"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /tmp/mongo_cluster/data1:/data/db
+      - shard1_data1:/data/db
 
   mongors1n2:
     container_name: mongors1n2
@@ -21,7 +23,7 @@ services:
       - "27017"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /tmp/mongo_cluster/data2:/data/db
+      - shard1_data2:/data/db
 
   mongors1n3:
     container_name: mongors1n3
@@ -33,7 +35,8 @@ services:
       - "27017"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /tmp/mongo_cluster/data3:/data/db
+      - shard1_data3:/data/db
+
   mongors2n1:
     container_name: mongors2n1
     image: mongo
@@ -44,7 +47,7 @@ services:
       - "27017"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /tmp/mongo_cluster/data4:/data/db
+      - shard2_data1:/data/db
 
   mongors2n2:
     container_name: mongors2n2
@@ -56,7 +59,7 @@ services:
       - "27017"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /tmp/mongo_cluster/data5:/data/db
+      - shard2_data2:/data/db
 
   mongors2n3:
     container_name: mongors2n3
@@ -68,7 +71,7 @@ services:
       - "27017"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /tmp/mongo_cluster/data6:/data/db
+      - shard2_data3:/data/db
 
   mongocfg1:
     container_name: mongocfg1
@@ -78,7 +81,7 @@ services:
       - "27017"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /tmp/mongo_cluster/config1:/data/db
+      - config1_data:/data/db
 
   mongocfg2:
     container_name: mongocfg2
@@ -88,7 +91,7 @@ services:
       - "27017"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /tmp/mongo_cluster/config2:/data/db
+      - config2_data:/data/db
 
   mongocfg3:
     container_name: mongocfg3
@@ -98,7 +101,7 @@ services:
       - "27017"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /tmp/mongo_cluster/config3:/data/db
+      - config3_data:/data/db
 
   mongos1:
     container_name: mongos1
@@ -127,3 +130,15 @@ services:
       - "27017"
     volumes:
       - /etc/localtime:/etc/localtime:ro
+
+
+volumes:
+  config1_data:
+  config2_data:
+  config3_data:
+  shard1_data1:
+  shard1_data2:
+  shard1_data3:
+  shard2_data1:
+  shard2_data2:
+  shard2_data3:
