@@ -8,4 +8,4 @@ RUN apt-get install gcc -y
 RUN pip install -r requirements.txt
 COPY . /app
 
-CMD uvicorn --reload --host=$AUTH_API_UVICORN_HOST --port=$AUTH_API_UVICORN_PORT auth.main:app
+CMD uvicorn --reload --host=$RATING_REVIEW_SERVICE_UVICORN_HOST --port=$RATING_REVIEW_SERVICE_UVICORN_PORT auth.main:app
