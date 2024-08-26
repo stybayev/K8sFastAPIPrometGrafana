@@ -117,8 +117,9 @@ services:
       - mongocfg1
       - mongocfg2
       - mongocfg3
-    entrypoint: >
-      bash -c 'until mongosh --host mongocfg1 --eval "rs.initiate({_id: \"mongors1conf\", configsvr: true, members: [{_id: 0, host: \"mongocfg1\"}, {_id: 1, host: \"mongocfg2\"}, {_id: 2, host: \"mongocfg3\"}]})"; do sleep 5; done'
+    volumes:
+      - ./rating_review_service/scripts:/scripts
+    entrypoint: bash /scripts/init_config_replica.sh
     healthcheck:
       test: [ "CMD", "mongosh", "--host", "mongocfg1", "--eval", "db.adminCommand('ping')" ]
       interval: 10s
@@ -132,8 +133,9 @@ services:
       - mongors1n1
       - mongors1n2
       - mongors1n3
-    entrypoint: >
-      bash -c 'until mongosh --host mongors1n1 --eval "rs.initiate({_id: \"mongors1\", members: [{_id: 0, host: \"mongors1n1\"}, {_id: 1, host: \"mongors1n2\"}, {_id: 2, host: \"mongors1n3\"}]})"; do sleep 5; done'
+    volumes:
+      - ./rating_review_service/scripts:/scripts
+    entrypoint: bash /scripts/init_replica_set_mongors1.sh
     healthcheck:
       test: [ "CMD", "mongosh", "--host", "mongors1n1", "--eval", "db.adminCommand('ping')" ]
       interval: 10s
@@ -147,8 +149,9 @@ services:
       - mongors2n1
       - mongors2n2
       - mongors2n3
-    entrypoint: >
-      bash -c 'until mongosh --host mongors2n1 --eval "rs.initiate({_id: \"mongors2\", members: [{_id: 0, host: \"mongors2n1\"}, {_id: 1, host: \"mongors2n2\"}, {_id: 2, host: \"mongors2n3\"}]})"; do sleep 5; done'
+    volumes:
+      - ./rating_review_service/scripts:/scripts
+    entrypoint: bash /scripts/init_replica_set_mongors2.sh
     healthcheck:
       test: [ "CMD", "mongosh", "--host", "mongors2n1", "--eval", "db.adminCommand('ping')" ]
       interval: 10s
@@ -162,9 +165,9 @@ services:
       - mongos1
       - init-replica-set-mongors1
       - init-replica-set-mongors2
-    entrypoint: >
-      bash -c 'until mongosh --host mongos1 --eval "sh.addShard(\"mongors1/mongors1n1\")"; do sleep 5; done && \
-               until mongosh --host mongos1 --eval "sh.addShard(\"mongors2/mongors2n1\")"; do sleep 5; done'
+    volumes:
+      - ./rating_review_service/scripts:/scripts
+    entrypoint: bash /scripts/add_shards.sh
     healthcheck:
       test: [ "CMD", "mongosh", "--host", "mongos1", "--eval", "db.adminCommand('ping')" ]
       interval: 10s
