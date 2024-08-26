@@ -175,7 +175,6 @@ services:
       start_period: 30s
       timeout: 5s
 
-
 volumes:
   config1_data:
   config2_data:
