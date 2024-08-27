@@ -185,7 +185,9 @@ services:
       - .:/app
     ports:
       - ${RATING_REVIEW_SERVICE_UVICORN_PORT}:${RATING_REVIEW_SERVICE_UVICORN_PORT}
-
+    depends_on:
+      add-shards:
+        condition: service_healthy
 
 volumes:
   config1_data:
