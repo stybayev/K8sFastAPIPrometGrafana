@@ -189,6 +189,24 @@ services:
       add-shards:
         condition: service_healthy
 
+      create-admin-user:
+        condition: service_healthy
+
+  create-admin-user:
+    image: mongo
+    depends_on:
+      - mongos1
+    volumes:
+      - ./rating_review_service/scripts:/scripts
+    entrypoint: bash /scripts/init_mongo_user.sh
+    healthcheck:
+      test: [ "CMD", "mongosh", "--host", "mongos1", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
+
+
 volumes:
   config1_data:
   config2_data:
