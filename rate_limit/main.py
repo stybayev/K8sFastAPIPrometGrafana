@@ -26,7 +26,7 @@ SERVICE_MAP = {
     "/api/files": "http://file_api:8081",
     "/api/v1/files": "http://file_api:8081",
     "/admin": "http://django_admin:8001",
-    "/minio/": "http://minio:9000"
+    "/minio/": "http://minio:9000",
 }
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s:     %(message)s')

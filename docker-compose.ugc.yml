@@ -175,6 +175,18 @@ services:
       start_period: 30s
       timeout: 5s
 
+  rating_review_service:
+    container_name: rating_review_service
+    build: ./rating_review_service
+    env_file:
+      - .env
+    restart: always
+    volumes:
+      - .:/app
+    ports:
+      - ${RATING_REVIEW_SERVICE_UVICORN_PORT}:${RATING_REVIEW_SERVICE_UVICORN_PORT}
+
+
 volumes:
   config1_data:
   config2_data:
