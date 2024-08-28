@@ -11,7 +11,8 @@ from rating_review_service.models.post import Post
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    client = AsyncIOMotorClient('mongodb://mongos1:27017')
+    client = AsyncIOMotorClient('mongodb://user:password@mongos1:27017')
+    # client = AsyncIOMotorClient('mongodb://mongos1:27017')
     await init_beanie(database=client.db_name, document_models=[Post])
     yield
     client.close()

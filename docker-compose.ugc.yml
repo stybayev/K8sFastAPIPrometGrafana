@@ -107,6 +107,12 @@ services:
     container_name: mongos1
     ports:
       - 27019:27017
+    healthcheck:
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
 
   mongos2:
     <<: *common-mongos
@@ -178,6 +184,15 @@ services:
       start_period: 30s
       timeout: 5s
 
+  create-user:
+    image: mongo
+    depends_on:
+      add-shards:
+        condition: service_healthy
+    volumes:
+      - ./rating_review_service/scripts:/scripts
+    entrypoint: bash /scripts/init_mongo_user.sh
+
   rating_review_service:
     container_name: rating_review_service
     build: ./rating_review_service
@@ -189,8 +204,7 @@ services:
     ports:
       - ${RATING_REVIEW_SERVICE_UVICORN_PORT}:${RATING_REVIEW_SERVICE_UVICORN_PORT}
     depends_on:
-      add-shards:
-        condition: service_healthy
+      - create-user
 
 volumes:
   config1_data:
