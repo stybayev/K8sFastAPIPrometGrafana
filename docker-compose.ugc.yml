@@ -1,7 +1,16 @@
 version: '3.7'
 
-x-common-shard: &common-shard
+x-common-shard1: &common-shard1
   image: mongo
+  command: mongod --shardsvr --replSet mongors1 --dbpath /data/db --port 27017
+  expose:
+    - "27017"
+  volumes:
+    - /etc/localtime:/etc/localtime:ro
+
+x-common-shard2: &common-shard2
+  image: mongo
+  command: mongod --shardsvr --replSet mongors2 --dbpath /data/db --port 27017
   expose:
     - "27017"
   volumes:
@@ -28,54 +37,48 @@ x-common-mongos: &common-mongos
 
 services:
   mongors1n1:
-    <<: *common-shard
+    <<: *common-shard1
     container_name: mongors1n1
-    command: mongod --shardsvr --replSet mongors1 --dbpath /data/db --port 27017
     ports:
       - 27017:27017
     volumes:
       - shard1_data1:/data/db
 
   mongors1n2:
-    <<: *common-shard
+    <<: *common-shard1
     container_name: mongors1n2
-    command: mongod --shardsvr --replSet mongors1 --dbpath /data/db --port 27017
     ports:
       - 27027:27017
     volumes:
       - shard1_data2:/data/db
 
   mongors1n3:
-    <<: *common-shard
+    <<: *common-shard1
     container_name: mongors1n3
-    command: mongod --shardsvr --replSet mongors1 --dbpath /data/db --port 27017
     ports:
       - 27037:27017
     volumes:
       - shard1_data3:/data/db
 
   mongors2n1:
-    <<: *common-shard
+    <<: *common-shard2
     container_name: mongors2n1
-    command: mongod --shardsvr --replSet mongors2 --dbpath /data/db --port 27017
     ports:
       - 27047:27017
     volumes:
       - shard2_data1:/data/db
 
   mongors2n2:
-    <<: *common-shard
+    <<: *common-shard2
     container_name: mongors2n2
-    command: mongod --shardsvr --replSet mongors2 --dbpath /data/db --port 27017
     ports:
       - 27057:27017
     volumes:
       - shard2_data2:/data/db
 
   mongors2n3:
-    <<: *common-shard
+    <<: *common-shard2
     container_name: mongors2n3
-    command: mongod --shardsvr --replSet mongors2 --dbpath /data/db --port 27017
     ports:
       - 27067:27017
     volumes:
@@ -188,24 +191,6 @@ services:
     depends_on:
       add-shards:
         condition: service_healthy
-
-      create-admin-user:
-        condition: service_healthy
-
-  create-admin-user:
-    image: mongo
-    depends_on:
-      - mongos1
-    volumes:
-      - ./rating_review_service/scripts:/scripts
-    entrypoint: bash /scripts/init_mongo_user.sh
-    healthcheck:
-      test: [ "CMD", "mongosh", "--host", "mongos1", "--eval", "db.adminCommand('ping')" ]
-      interval: 10s
-      retries: 5
-      start_period: 30s
-      timeout: 5s
-
 
 volumes:
   config1_data:
