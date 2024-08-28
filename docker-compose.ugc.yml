@@ -189,6 +189,8 @@ services:
     depends_on:
       add-shards:
         condition: service_healthy
+    env_file:
+      - .env
     volumes:
       - ./rating_review_service/scripts:/scripts
     entrypoint: bash /scripts/init_mongo_user.sh
