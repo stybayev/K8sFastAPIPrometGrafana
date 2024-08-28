@@ -30,17 +30,17 @@ jobs:
         run: |
           flake8 . --count --select=E9,F63,F7 --show-source --statistics --format=html --htmldir=lint_report.html
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --format=html --htmldir=lint_report2.html
-      
-      - name: Run mypy
-        run: |
-          mypy .
 
       - name: Upload linter report
         uses: actions/upload-artifact@v2
         with:
           name: lint-report
           path: lint_report.html
-
+      
+      - name: Run mypy
+        run: |
+          mypy .
+          
       - name: Send success message to Telegram
         if: success()
         env:
