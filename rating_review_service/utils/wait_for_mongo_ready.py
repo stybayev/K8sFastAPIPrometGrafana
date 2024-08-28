@@ -3,6 +3,9 @@ from motor.motor_asyncio import AsyncIOMotorClient
 
 
 async def wait_for_mongo_ready(uri: str, timeout: int = 60) -> None:
+    """
+    Функция ожидания готовности MongoDB
+    """
     client = AsyncIOMotorClient(uri)
     end_time = asyncio.get_event_loop().time() + timeout
     while True:
