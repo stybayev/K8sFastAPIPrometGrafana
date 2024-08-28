@@ -1,18 +1,18 @@
+import asyncio
 from fastapi.responses import ORJSONResponse
-
 from rating_review_service.core.config import settings
 from contextlib import asynccontextmanager
 from beanie import init_beanie
 from fastapi import FastAPI
 from motor.motor_asyncio import AsyncIOMotorClient
-
 from rating_review_service.models.post import Post
+from rating_review_service.utils.wait_for_mongo_ready import wait_for_mongo_ready
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    await wait_for_mongo_ready('mongodb://user:password@mongos1:27017')
     client = AsyncIOMotorClient('mongodb://user:password@mongos1:27017')
-    # client = AsyncIOMotorClient('mongodb://mongos1:27017')
     await init_beanie(database=client.db_name, document_models=[Post])
     yield
     client.close()

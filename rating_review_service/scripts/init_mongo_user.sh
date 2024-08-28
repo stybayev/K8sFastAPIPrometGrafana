@@ -1,6 +1,5 @@
 #!/bin/bash
 
-sleep 20
 mongosh --host mongos1 --port 27017 <<EOF
 use admin
 db.createUser({
