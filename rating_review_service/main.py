@@ -11,9 +11,9 @@ from rating_review_service.utils.wait_for_mongo_ready import wait_for_mongo_read
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    await wait_for_mongo_ready('mongodb://user:password@mongos1:27017')
-    client = AsyncIOMotorClient('mongodb://user:password@mongos1:27017')
-    await init_beanie(database=client.db_name, document_models=[Post])
+    await wait_for_mongo_ready(settings.db.url)
+    client = AsyncIOMotorClient(settings.db.url)
+    await init_beanie(client[settings.db.default_database], document_models=[Post])
     yield
     client.close()
 
