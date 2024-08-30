@@ -3,3 +3,4 @@ aioredis
 fastapi==0.99.1
 uvicorn==0.24.0
 pyjwt==1.7.1
+sentry-sdk[fastapi]==2.13.0

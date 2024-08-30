@@ -5,8 +5,7 @@ COPY requirements.txt /file_api
 RUN /usr/local/bin/python -m pip install --upgrade pip \
 && apt-get update -y \
 && apt-get install gcc -y \
-&& pip install -r requirements.txt \
-&& pip install --upgrade sentry-sdk
+&& pip install -r requirements.txt
 COPY . /file_api
 
 CMD uvicorn --reload --host=$FILE_API_UVICORN_HOST --port=$FILE_API_UVICORN_PORT file_api.main:app

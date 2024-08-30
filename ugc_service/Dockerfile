@@ -14,7 +14,6 @@ RUN /usr/local/bin/python -m pip install --upgrade pip && \
     apt-get update -y && \
     apt-get install -y --no-install-recommends gcc curl netcat && \
     pip install -r requirements.txt && \
-    pip install --upgrade 'sentry-sdk[flask]' && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 

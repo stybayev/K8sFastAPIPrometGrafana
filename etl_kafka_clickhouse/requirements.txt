@@ -3,3 +3,4 @@ aiohttp==3.10.2
 clickhouse-driver==0.2.8
 pydantic_settings==2.4.0
 pyjwt==1.7.1
+sentry-sdk==2.13.0

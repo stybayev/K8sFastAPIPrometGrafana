@@ -5,8 +5,7 @@ COPY requirements.txt /app
 RUN /usr/local/bin/python -m pip install --upgrade pip \
 && apt-get update -y \
 && apt-get install gcc -y \
-&& pip install -r requirements.txt \
-&& pip install --upgrade 'sentry-sdk[fastapi]'
+&& pip install -r requirements.txt
 COPY . /app
 
 CMD uvicorn --reload --host=$UVICORN_HOST --port=$UVICORN_PORT app.main:app

@@ -5,8 +5,7 @@ COPY requirements.txt /auth
 RUN /usr/local/bin/python -m pip install --upgrade pip \
 && apt-get update -y \
 && apt-get install gcc -y \
-&& pip install -r requirements.txt \
-&& pip install --upgrade 'sentry-sdk[fastapi]'
+&& pip install -r requirements.txt
 COPY . /auth
 
 CMD uvicorn --reload --host=$AUTH_API_UVICORN_HOST --port=$AUTH_API_UVICORN_PORT auth.main:app
