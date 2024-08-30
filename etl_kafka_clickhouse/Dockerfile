@@ -7,7 +7,7 @@ COPY . /etl_kafka_clickhouse
 RUN apt-get update &&  \
     apt-get upgrade && \
     pip install -r requirements.txt && \
-    && pip install --upgrade sentry-sdk
+    pip install --upgrade sentry-sdk
 
 
 CMD ["python", "etl_processing.py"]
