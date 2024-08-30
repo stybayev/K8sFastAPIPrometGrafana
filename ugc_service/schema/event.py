@@ -13,5 +13,9 @@ class EventData(BaseEventData):
     pass
 
 
+class InternalEventData(BaseEventData):
+    user_id: str = Field(..., description="User ID")
+
+
 class EventResponse(BaseEventData):
     user_id: str = Field(..., description="User ID")
