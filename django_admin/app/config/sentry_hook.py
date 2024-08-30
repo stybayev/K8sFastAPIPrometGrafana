@@ -1,6 +1,7 @@
+import os
+
 import jwt
 from jwt import PyJWTError
-from app.core.config import settings
 
 
 def before_send(event, hint):
@@ -42,7 +43,7 @@ def extract_user_data_from_token(token: str) -> dict:
             token = token[len("Bearer "):]
 
         # Декодируем JWT-токен
-        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+        payload = jwt.decode(token, os.getenv("JWT_SECRET_KEY"), algorithms=[os.getenv("ALGORITHM")])
 
         _id = payload.get("id")
         first_name = payload.get("first_name")
