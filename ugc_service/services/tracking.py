@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from flask_jwt_extended import get_jwt_identity
 from functools import lru_cache
 from kafka.errors import NoBrokersAvailable
@@ -26,11 +26,13 @@ class EventService:
         else:
             raise ValueError("Unknown event type")
 
-    def track_event(self, body: Dict[str, Any]) -> EventResponse:
+    def track_event(self, body: Dict[str, Any], user_id: str | None) -> EventResponse:
         """
         Отслеживание события и отправка его в Kafka
         """
-        user_id = get_jwt_identity()
+        if user_id is None:
+            user_id = get_jwt_identity()
+
         event_type = body["event_type"]
         topic = self._determine_topic(event_type)
 
