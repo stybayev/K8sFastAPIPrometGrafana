@@ -1,6 +1,6 @@
 import jwt
 from jwt import PyJWTError
-from ugc_service.core.config import settings
+from core.config import settings
 
 
 def before_send(event, hint):

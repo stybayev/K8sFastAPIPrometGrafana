@@ -1,6 +1,6 @@
 import jwt
 from jwt import PyJWTError
-from etl_kafka_clickhouse.settings import settings
+from settings import settings
 
 
 def before_send(event, hint):
