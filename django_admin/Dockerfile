@@ -16,7 +16,11 @@ RUN groupadd -r django && useradd -d /opt/app -r -g django django \
 COPY app/requirements.txt requirements.txt
 COPY app/uwsgi/uwsgi.ini uwsgi.ini
 
-RUN apt-get update && apt-get install netcat-traditional && python -m pip install --upgrade pip && pip install -r requirements.txt --no-cache
+RUN apt-get update  \
+    && apt-get install netcat-traditional  \
+    && python -m pip install --upgrade pip  \
+    && pip install -r requirements.txt --no-cache  \
+    && pip install --upgrade 'sentry-sdk[django]'
 COPY app/ .
 
 RUN chmod +x docker-entrypoint.sh  && mkdir -p /opt/app/static && mkdir -p /opt/app/uploads
