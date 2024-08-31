@@ -1,13 +1,17 @@
-from motor.motor_asyncio import AsyncIOMotorClient
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from rating_review_service.core.config import settings
 from enum import Enum
+
+client = AsyncIOMotorClient(settings.db.url)
+db = client[settings.db.default_database]
 
 
 async def shard_collections(collections: Enum):
     """
     Функция шардирования и создания коллекций.
     """
-    client = AsyncIOMotorClient(settings.db.url)
     await client.admin.command("enableSharding", settings.db.default_database)
 
     db = client[settings.db.default_database]
@@ -23,3 +27,10 @@ async def shard_collections(collections: Enum):
             f"{settings.db.default_database}.{collection.collection_name}",
             key=shard_key
         )
+
+
+async def get_db() -> AsyncGenerator:
+    try:
+        yield db
+    finally:
+        pass
