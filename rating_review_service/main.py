@@ -2,7 +2,7 @@ from fastapi.responses import ORJSONResponse
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
-from rating_review_service.api.likes import likes
+from rating_review_service.api.v1 import likes, review
 from rating_review_service.core.config import settings
 from rating_review_service.db.mongo import shard_collections
 from rating_review_service.utils.enums import ShardedCollections
@@ -26,3 +26,4 @@ app = FastAPI(
 )
 
 app.include_router(likes.router, prefix="/api/v1/likes", tags=["likes"])
+app.include_router(review.router, prefix="/api/v1/reviews", tags=["reviews"])
