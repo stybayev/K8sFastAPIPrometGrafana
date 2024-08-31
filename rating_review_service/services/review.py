@@ -2,31 +2,45 @@ from functools import lru_cache
 
 from bson import ObjectId
 from rating_review_service.db.mongo import get_db
-from rating_review_service.schema.review import Review
+from rating_review_service.schema.review import Review, ReviewLike
 from rating_review_service.utils.enums import ShardedCollections
 from fastapi import Depends, HTTPException, status
 
 
-
 class ReviewService:
     def __init__(self, db):
-        self.collection = db[ShardedCollections.REVIEW_COLLECTION.collection_name]
+        self.review_collection = db[ShardedCollections.REVIEW_COLLECTION.collection_name]
+        self.review_likes_collection = db[ShardedCollections.REVIEW_LIKES_COLLECTION.collection_name]
 
     def to_object_id(self, id_str: str):
         return ObjectId(id_str) if ObjectId.is_valid(id_str) else id_str
 
     async def add_review(self, review: Review):
-        # Проверяем, является ли значение `movie_id` и `user_id` корректными ObjectId
         review_dict = review.dict()
         review_dict["movie_id"] = self.to_object_id(review.movie_id)
         review_dict["user_id"] = self.to_object_id(review.user_id)
-
         try:
-            result = await self.collection.insert_one(review_dict)
+            result = await self.review_collection.insert_one(review_dict)
             return str(result.inserted_id)
         except Exception as e:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                                 detail=str(e))
+
+    async def add_review_like(self, review_like: ReviewLike):
+        review_like_dict = review_like.dict()
+        review_like_dict["review_id"] = self.to_object_id(review_like.review_id)
+        review_like_dict["user_id"] = self.to_object_id(review_like.user_id)
+        try:
+            await self.review_likes_collection.insert_one(review_like_dict)
+        except Exception as e:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                                detail=str(e))
+
+    async def get_review_likes_dislikes(self, review_id: str):
+        review_id = self.to_object_id(review_id)
+        likes_count = await self.review_likes_collection.count_documents({"review_id": review_id, "like": True})
+        dislikes_count = await self.review_likes_collection.count_documents({"review_id": review_id, "like": False})
+        return {"likes": likes_count, "dislikes": dislikes_count}
 
 
 @lru_cache()
