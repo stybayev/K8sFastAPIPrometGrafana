@@ -1,7 +1,7 @@
 from enum import Enum
 
 class ShardedCollections(Enum):
-    SOME_COLLECTION = ("someCollection", {"someField": "hashed"})
+    LIKES_COLLECTION = ("likesCollection", {"movie_id": "hashed"})
     ANOTHER_COLLECTION = ("anotherCollection", {"anotherField": "hashed"})
     YET_ANOTHER_COLLECTION = ("yetAnotherCollection", {"yetAnotherField": 1})
 

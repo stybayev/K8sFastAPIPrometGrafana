@@ -5,6 +5,7 @@ from pydantic import BaseSettings, Field
 
 from app.core.logger import LOGGING
 
+
 class DataBaseSettings(BaseSettings):
     initdb_root_username: str = ...
     initdb_root_password: str = ...
