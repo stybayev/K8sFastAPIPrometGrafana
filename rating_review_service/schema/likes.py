@@ -11,3 +11,7 @@ class Like(BaseModel):
 class MovieLikesResponse(BaseModel):
     likes: int
     dislikes: int
+
+
+class MovieRatingResponse(BaseModel):
+    average_rating: float | None

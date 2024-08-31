@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, status, Depends
-from rating_review_service.schema.likes import Like, MovieLikesResponse
+from rating_review_service.schema.likes import Like, MovieRatingResponse, MovieLikesResponse
 from rating_review_service.services.likes import get_like_service, LikeService
 
 router = APIRouter()
@@ -40,7 +40,10 @@ async def get_likes(movie_id: str, service: LikeService = Depends(get_like_servi
     return result
 
 
-@router.get("/rating/{movie_id}")
+@router.get("/rating/{movie_id}", response_model=MovieRatingResponse, status_code=status.HTTP_200_OK)
 async def get_average_rating(movie_id: str, service: LikeService = Depends(get_like_service)):
+    """
+    Просмотр средней пользовательской оценки фильма.
+    """
     result = await service.get_movie_average_rating(movie_id)
-    return {"average_rating": result}
+    return MovieRatingResponse(average_rating=result)
