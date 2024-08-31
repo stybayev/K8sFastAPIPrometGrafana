@@ -6,3 +6,8 @@ class Like(BaseModel):
     user_id: str = Field(default_factory=lambda: str(uuid4()))
     movie_id: str = Field(default_factory=lambda: str(uuid4()))
     rating: int = Field(..., ge=0, le=10)
+
+
+class MovieLikesResponse(BaseModel):
+    likes: int
+    dislikes: int

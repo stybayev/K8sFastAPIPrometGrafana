@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, status, Depends
-from rating_review_service.schema.likes import Like
+from rating_review_service.schema.likes import Like, MovieLikesResponse
 from rating_review_service.services.likes import get_like_service, LikeService
 
 router = APIRouter()
@@ -31,10 +31,10 @@ async def unlike_movie(user_id: str,
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Лайк не найден")
 
 
-@router.get("/likes/{movie_id}")
+@router.get("/likes/{movie_id}", status_code=status.HTTP_200_OK, response_model=MovieLikesResponse)
 async def get_likes(movie_id: str, service: LikeService = Depends(get_like_service)):
     """
-    Просмотр количества лайков и дизлайков у фильма;
+    Просмотр количества лайков и дизлайков у фильма.
     """
     result = await service.get_movie_likes(movie_id)
     return result
