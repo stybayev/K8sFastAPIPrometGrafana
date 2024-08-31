@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from rating_review_service.schema.review import Review, ReviewResponse, ReviewLike
+from rating_review_service.schema.review import Review, ReviewResponse, ReviewLike, LikeDislikeResponse
 from rating_review_service.services.review import ReviewService, get_review_service
 
 router = APIRouter()
@@ -22,13 +22,21 @@ async def add_review(review: Review, service: ReviewService = Depends(get_review
     )
 
 
-@router.post("/review/like/", status_code=status.HTTP_201_CREATED)
-async def add_review_like(review_like: ReviewLike, service: ReviewService = Depends(get_review_service)):
+@router.post("/review/{review_id}/like", status_code=status.HTTP_200_OK, response_model=LikeDislikeResponse)
+async def like_review(review_id: str, user_id: str, like: bool, service: ReviewService = Depends(get_review_service)):
     """
     Добавление лайка или дизлайка к рецензии.
     """
-    await service.add_review_like(review_like)
-    return {"message": "Лайк/дизлайк добавлен"}
+    result = await service.add_or_update_review_like(review_id, user_id, like)
+    if result:
+        return LikeDislikeResponse(
+            review_id=review_id,
+            user_id=user_id,
+            like=like,
+            message="Лайк/дизлайк добавлен"
+        )
+    raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        detail="Не удалось добавить лайк/дизлайк")
 
 
 @router.get("/review/{review_id}/likes")

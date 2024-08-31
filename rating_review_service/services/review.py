@@ -26,15 +26,17 @@ class ReviewService:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                                 detail=str(e))
 
-    async def add_review_like(self, review_like: ReviewLike):
-        review_like_dict = review_like.dict()
-        review_like_dict["review_id"] = self.to_object_id(review_like.review_id)
-        review_like_dict["user_id"] = self.to_object_id(review_like.user_id)
-        try:
-            await self.review_likes_collection.insert_one(review_like_dict)
-        except Exception as e:
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                                detail=str(e))
+    async def add_or_update_review_like(self, review_id: str, user_id: str, like: bool):
+        review_id = self.to_object_id(review_id)
+        user_id = self.to_object_id(user_id)
+
+        result = await self.review_likes_collection.update_one(
+            {"review_id": review_id, "user_id": user_id},
+            {"$set": {"like": like}},
+            upsert=True
+        )
+
+        return result.upserted_id or result.modified_count > 0
 
     async def get_review_likes_dislikes(self, review_id: str):
         review_id = self.to_object_id(review_id)
