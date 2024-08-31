@@ -1,10 +1,20 @@
 import os
+import sentry_sdk
+
 from pathlib import Path
 
 from dotenv import find_dotenv, load_dotenv
 from split_settings.tools import include
-
+from django_admin.app.config.sentry_hook import before_send
 from .components import constants
+
+sentry_sdk.init(
+    dsn=os.getenv("DJANGO_SENTRY_DSN"),
+    traces_sample_rate=1.0,
+    profiles_sample_rate=1.0,
+    send_default_pii=True,  # Включает передачу данных о пользователе
+    before_send=before_send,
+)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 

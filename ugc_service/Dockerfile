@@ -18,6 +18,7 @@ RUN /usr/local/bin/python -m pip install --upgrade pip && \
     rm -rf /var/lib/apt/lists/*
 
 # Копируем исходный код в контейнер
+
 COPY . /ugc_service
 
 # Определяем команду запуска контейнера

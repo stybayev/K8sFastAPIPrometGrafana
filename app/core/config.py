@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     redis_port: int = Field(default=6379, env="REDIS_PORT")
     elastic_host: str = Field(default="0.0.0.0", env="ELASTIC_HOST")
     elastic_port: int = Field(default=9200, env="ELASTIC_PORT")
+    secret_key: str = Field(default='practicum', env="JWT_SECRET_KEY")
+    algorithm: str = Field(default='HS256', env="HS256")
 
     class Config:
         env_file = ".env"

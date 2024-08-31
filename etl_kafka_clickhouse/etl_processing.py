@@ -1,12 +1,15 @@
 import asyncio
 import json
 import logging
+import os
 from typing import List, Optional
 
+import sentry_sdk
 from aiokafka import AIOKafkaConsumer, ConsumerRecord
 from clickhouse_driver import Client
 from clickhouse_driver.errors import NetworkError, ServerException
 
+from sentry_hook import before_send
 from settings import settings
 
 logging.basicConfig(
@@ -22,12 +25,13 @@ poll_records = settings.clickhouse_poll_records
 clickhouse_host = settings.clickhouse_host
 clickhouse_port = settings.clickhouse_port
 
+
 async def consume() -> None:
     """
     Асинхронная функция, которая создает Kafka-консюмер, читает сообщения из Kafka и передает их в ClickHouse.
 
     Функция создает Kafka-консюмер, который подключается к нескольким топикам и считывает сообщения пакетами
-    по 10 штук. После того, как пакет собран, сообщения отправляются на запись в ClickHouse. В случае успеха
+    по 10 штук. После того как пакет собран, сообщения отправляются на запись в ClickHouse. В случае успеха
     смещения подтверждаются и консюмер продолжает обработку следующих сообщений.
     """
     consumer: Optional[AIOKafkaConsumer] = None
@@ -104,6 +108,13 @@ async def save_to_clickhouse(messages: List[ConsumerRecord]) -> bool:
 
 
 if __name__ == '__main__':
+    sentry_sdk.init(
+        dsn=os.getenv("ETL_KAFKA_CLICKHOUSE_SENTRY_DSN"),
+        traces_sample_rate=1.0,
+        profiles_sample_rate=1.0,
+        send_default_pii=True,  # Включает передачу данных о пользователе
+        before_send=before_send,
+    )
     loop = asyncio.get_event_loop()
     try:
         logger.info("Starting ETL process")

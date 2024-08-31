@@ -1,9 +1,21 @@
+import os
+
+import sentry_sdk
 from flask import Flask, request
 from api.tracking import api
 from core.swagger_config import configure_swagger
 from flask_jwt_extended import JWTManager
 from core.config import init_config
 from core.middleware import check_blacklist
+from utils.sentry_hook import before_send
+
+sentry_sdk.init(
+    dsn=os.getenv("UGS_SERVICE_SENTRY_DSN"),
+    traces_sample_rate=1.0,
+    profiles_sample_rate=1.0,
+    send_default_pii=True,  # Включает передачу данных о пользователе
+    before_send=before_send,
+)
 
 app = Flask(__name__)
 

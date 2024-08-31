@@ -9,6 +9,9 @@ import typing
 import psycopg2
 import redis
 import requests
+import sentry_sdk
+from psycopg2.extensions import connection as _connection
+
 from adapters.elasticsearch_loader import ElasticsearchLoader
 from adapters.postgres_extractor import PostgresExtractor
 from adapters.redis_state import RedisStorage, State
@@ -16,7 +19,7 @@ from backoff import backoff
 from config import DBParams, ElasticParams, RedisParams
 from connection import postgres_connection
 from data_transform import DataTransform
-from psycopg2.extensions import connection as _connection
+from sentry_hook import before_send
 
 # Максимальный размер выгружаемой пачки
 FETCH_LIMIT = 100
@@ -31,17 +34,17 @@ class ModelInfo:
 
 
 def load(
-    state: State,
-    elasticsearch_loader: ElasticsearchLoader,
-    model_info: ModelInfo,
+        state: State,
+        elasticsearch_loader: ElasticsearchLoader,
+        model_info: ModelInfo,
 ):
     """Процесс загрузки данных для фильмов."""
     last = state.get_state(model_info.state_name)
     last_modified = last["modified"] if last else None
 
     for batch in model_info.pg_func(
-        last_modified=last_modified,
-        fetch_limit=FETCH_LIMIT,
+            last_modified=last_modified,
+            fetch_limit=FETCH_LIMIT,
     ):
         prepared_batch = model_info.transform_func(rows=batch)
         elasticsearch_loader.save_batch(
@@ -55,10 +58,10 @@ def load(
 
 
 def load_related_data(
-    state: State,
-    postgres_extractor: PostgresExtractor,
-    elasticsearch_loader: ElasticsearchLoader,
-    model_info: ModelInfo,
+        state: State,
+        postgres_extractor: PostgresExtractor,
+        elasticsearch_loader: ElasticsearchLoader,
+        model_info: ModelInfo,
 ):
     """Процесс загрузки данных для связанных данных."""
 
@@ -66,13 +69,13 @@ def load_related_data(
     last_state_modified = last_state["modified"] if last_state else None
 
     for filmwork_ids in model_info.pg_func(
-        last_modified=last_state_modified,
-        fetch_limit=FETCH_LIMIT,
+            last_modified=last_state_modified,
+            fetch_limit=FETCH_LIMIT,
     ):
         filmwork_ids_list = [filmwork["film_work_id"] for filmwork in filmwork_ids]
         for batch in postgres_extractor.get_filmworks_by_ids(
-            ids=filmwork_ids_list,
-            fetch_limit=FETCH_LIMIT,
+                ids=filmwork_ids_list,
+                fetch_limit=FETCH_LIMIT,
         ):
             prepared_batch = model_info.transform_func(rows=batch)
             elasticsearch_loader.save_batch(
@@ -86,9 +89,9 @@ def load_related_data(
 
 
 def load_from_postgres_to_elasticsearch(
-    pg_conn: _connection,
-    session: requests.Session,
-    redis_conn: redis.Redis,
+        pg_conn: _connection,
+        session: requests.Session,
+        redis_conn: redis.Redis,
 ):
     """Основной процесс загрузки данных из Postgres в Elasticsearch."""
     postgres_extractor = PostgresExtractor(connection=pg_conn)
@@ -153,9 +156,9 @@ def load_from_postgres_to_elasticsearch(
 
 @backoff(
     exceptions=(
-        redis.exceptions.ConnectionError,
-        requests.exceptions.ConnectionError,
-        psycopg2.OperationalError,
+            redis.exceptions.ConnectionError,
+            requests.exceptions.ConnectionError,
+            psycopg2.OperationalError,
     ),
     border_sleep_time=10000,
 )
@@ -216,4 +219,11 @@ def main():
 
 
 if __name__ == "__main__":
+    sentry_sdk.init(
+        dsn=os.getenv("ETL_SENTRY_DSN"),
+        traces_sample_rate=1.0,
+        profiles_sample_rate=1.0,
+        send_default_pii=True,  # Включает передачу данных о пользователе
+        before_send=before_send,
+    )
     main()

@@ -1,18 +1,28 @@
-from elasticsearch import AsyncElasticsearch
-from fastapi.responses import ORJSONResponse
-from fastapi import FastAPI
-from redis.asyncio import Redis
+import os
 from contextlib import asynccontextmanager
+
+import sentry_sdk
+from elasticsearch import AsyncElasticsearch
+from fastapi import FastAPI
+from fastapi.responses import ORJSONResponse
+from fastapi_jwt_auth import AuthJWT
+from redis.asyncio import Redis
 
 from app.api.v1 import films, genres, persons
 from app.core.config import settings
 from app.db import elastic, redis
 from app.dependencies.main import setup_dependencies
-
+from app.utils.sentry_hook import before_send
 from auth.core.jwt import JWTSettings
-from fastapi_jwt_auth import AuthJWT
-
 from auth.core.middleware import check_blacklist
+
+sentry_sdk.init(
+    dsn=os.getenv("APP_SENTRY_DSN"),
+    traces_sample_rate=1.0,
+    profiles_sample_rate=1.0,
+    send_default_pii=True,  # Включает передачу данных о пользователе
+    before_send=before_send,
+)
 
 
 @asynccontextmanager

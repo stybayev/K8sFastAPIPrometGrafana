@@ -1,6 +1,7 @@
 import os
 from contextlib import asynccontextmanager
 
+import sentry_sdk
 from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 from fastapi_jwt_auth import AuthJWT
@@ -15,6 +16,15 @@ from auth.core.middleware import before_request, check_blacklist
 from auth.core.tracer import init_tracer
 from auth.db import redis
 from auth.utils.exception_handlers import authjwt_exception_handler
+from auth.utils.sentry_hook import before_send
+
+sentry_sdk.init(
+    dsn=os.getenv("AUTH_SENTRY_DSN"),
+    traces_sample_rate=1.0,
+    profiles_sample_rate=1.0,
+    send_default_pii=True,  # Включает передачу данных о пользователе
+    before_send=before_send,
+)
 
 
 @asynccontextmanager

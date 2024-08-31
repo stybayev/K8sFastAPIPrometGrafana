@@ -1,7 +1,5 @@
-
 from pydantic import ValidationError
 from pydantic_settings import BaseSettings
-from typing import List
 
 
 class Settings(BaseSettings):
@@ -13,6 +11,9 @@ class Settings(BaseSettings):
     clickhouse_host: str
     clickhouse_port: int
     clickhouse_poll_records: int
+
+    jwt_secret_key: str
+    algorithm: str
 
     class Config:
         env_file = ".env"

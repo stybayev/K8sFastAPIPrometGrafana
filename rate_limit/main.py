@@ -1,11 +1,22 @@
 import datetime
 import logging
 import os
-import json
+
 import aiohttp
 import aioredis
+import sentry_sdk
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
+
+from rate_limit.sentry_hook import before_send
+
+sentry_sdk.init(
+    dsn=os.getenv("RATE_LIMIT_SENTRY_DSN"),
+    traces_sample_rate=1.0,
+    profiles_sample_rate=1.0,
+    send_default_pii=True,  # Включает передачу данных о пользователе
+    before_send=before_send,
+)
 
 app = FastAPI()
 
@@ -67,7 +78,6 @@ async def proxy(request: Request, path: str):
             break
 
     if not target_url:
-        print("!!!!!")
         raise HTTPException(status_code=400, detail="Invalid target path")
 
     async with aiohttp.ClientSession() as client:
