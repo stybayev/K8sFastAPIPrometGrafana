@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Optional, List
+
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 
 from rating_review_service.schema.review import Review, ReviewResponse, ReviewLike, LikeDislikeResponse
 from rating_review_service.services.review import ReviewService, get_review_service
@@ -39,10 +41,16 @@ async def like_review(review_id: str, user_id: str, like: bool, service: ReviewS
                         detail="Не удалось добавить лайк/дизлайк")
 
 
-@router.get("/review/{review_id}/likes")
-async def get_review_likes(review_id: str, service: ReviewService = Depends(get_review_service)):
+@router.get("/reviews/", response_model=List[ReviewResponse])
+async def get_reviews(
+        movie_id: Optional[str] = None,
+        sort_by: Optional[str] = Query(None,
+                                       description="Поле для сортировки: 'likes', 'dislikes', 'rating', 'publication_date'"),
+        order: Optional[str] = Query("desc", description="Порядок сортировки: 'asc' или 'desc'"),
+        service: ReviewService = Depends(get_review_service)
+):
     """
-    Получение количества лайков и дизлайков для рецензии.
+    Получение списка рецензий с возможностью гибкой сортировки.
     """
-    result = await service.get_review_likes_dislikes(review_id)
-    return result
+    reviews = await service.get_reviews(movie_id, sort_by, order)
+    return reviews

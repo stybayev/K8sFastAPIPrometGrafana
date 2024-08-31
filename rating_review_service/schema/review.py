@@ -10,6 +10,7 @@ class Review(BaseModel):
     text: str
     publication_date: datetime = Field(default_factory=datetime.utcnow)
     author: str
+    rating: int | None = Field(None, ge=0, le=10)
 
 
 class ReviewResponse(Review):

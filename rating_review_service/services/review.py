@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Optional
 
 from bson import ObjectId
 from rating_review_service.db.mongo import get_db
@@ -11,6 +12,7 @@ class ReviewService:
     def __init__(self, db):
         self.review_collection = db[ShardedCollections.REVIEW_COLLECTION.collection_name]
         self.review_likes_collection = db[ShardedCollections.REVIEW_LIKES_COLLECTION.collection_name]
+        self.likes_collection = db[ShardedCollections.LIKES_COLLECTION.collection_name]
 
     def to_object_id(self, id_str: str):
         return ObjectId(id_str) if ObjectId.is_valid(id_str) else id_str
@@ -43,6 +45,56 @@ class ReviewService:
         likes_count = await self.review_likes_collection.count_documents({"review_id": review_id, "like": True})
         dislikes_count = await self.review_likes_collection.count_documents({"review_id": review_id, "like": False})
         return {"likes": likes_count, "dislikes": dislikes_count}
+
+    async def get_reviews(self, movie_id: Optional[str], sort_by: Optional[str], order: Optional[str]):
+        query = {}
+        if movie_id:
+            query["movie_id"] = self.to_object_id(movie_id)
+
+        pipeline = [
+            {"$match": query},
+            {
+                "$lookup": {
+                    "from": ShardedCollections.REVIEW_LIKES_COLLECTION.collection_name,
+                    "localField": "_id",
+                    "foreignField": "review_id",
+                    "as": "likes_info"
+                }
+            },
+            {
+                "$lookup": {
+                    "from": ShardedCollections.LIKES_COLLECTION.collection_name,
+                    "localField": "movie_id",
+                    "foreignField": "movie_id",
+                    "as": "movie_rating_info"
+                }
+            },
+            {
+                "$addFields": {
+                    "likes": {"$size": {
+                        "$filter": {"input": "$likes_info", "as": "like", "cond": {"$eq": ["$$like.like", True]}}}},
+                    "dislikes": {"$size": {
+                        "$filter": {"input": "$likes_info", "as": "like", "cond": {"$eq": ["$$like.like", False]}}}},
+                    "movie_rating": {"$avg": "$movie_rating_info.rating"},
+                    "id": {"$toString": "$_id"}  # Преобразуем ObjectId в строку и добавляем как поле `id`
+                }
+            },
+            {
+                "$project": {
+                    "likes_info": 0,
+                    "movie_rating_info": 0
+                }
+            }
+        ]
+
+        if sort_by:
+            sort_order = 1 if order == "asc" else -1
+            pipeline.append({"$sort": {sort_by: sort_order}})
+        else:
+            pipeline.append({"$sort": {"publication_date": -1}})
+
+        reviews = await self.review_collection.aggregate(pipeline).to_list(None)
+        return reviews
 
 
 @lru_cache()
