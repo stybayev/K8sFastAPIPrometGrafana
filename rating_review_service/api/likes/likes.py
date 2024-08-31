@@ -33,6 +33,9 @@ async def unlike_movie(user_id: str,
 
 @router.get("/likes/{movie_id}")
 async def get_likes(movie_id: str, service: LikeService = Depends(get_like_service)):
+    """
+    Просмотр количества лайков и дизлайков у фильма;
+    """
     result = await service.get_movie_likes(movie_id)
     return result
 
