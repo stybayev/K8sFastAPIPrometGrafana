@@ -38,7 +38,7 @@ jobs:
       
       - name: Run mypy
         run: |
-          mypy . --exclude app/services --exclude app/api --exclude auth/core
+          mypy . --exclude app/services --exclude app/api --exclude auth
           
       - name: Send success message to Telegram
         if: success()
