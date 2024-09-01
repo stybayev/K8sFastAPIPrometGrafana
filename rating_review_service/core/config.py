@@ -28,6 +28,12 @@ class Settings(BaseSettings):
     # MongoDB
     db: DataBaseSettings = DataBaseSettings()
 
+    # JWT
+    SECRET_KEY: str = Field(default="secret_key", env="JWT_SECRET_KEY")
+    ALGORITHM: str = Field(default="HS256", env="ALGORITHM")
+    ACCESS_TOKEN_EXPIRES: int = Field(default=1440, env="ACCESS_TOKEN_EXPIRES")
+    REFRESH_TOKEN_EXPIRES: int = Field(default=1440, env="REFRESH_TOKEN_EXPIRES")
+
     class Config:
         env_file = ".env"
         env_prefix = "RATING_REVIEW_SERVICE_"
