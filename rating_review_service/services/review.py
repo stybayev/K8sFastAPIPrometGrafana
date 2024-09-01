@@ -1,5 +1,4 @@
 from functools import lru_cache
-from typing import Optional
 
 from bson import ObjectId
 from rating_review_service.db.mongo import get_db
