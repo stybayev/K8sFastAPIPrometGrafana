@@ -1,8 +1,6 @@
 import pytest
-from flask import Flask
 from unittest.mock import patch
 from ugc_service.main import app as flask_app
-from services.tracking import EventService
 
 
 @pytest.fixture
