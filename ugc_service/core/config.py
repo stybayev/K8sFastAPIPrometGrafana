@@ -1,6 +1,8 @@
+import logging
+
 from flask import Flask
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
+from logger_config import setup_logger
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="UGC_")
@@ -28,3 +30,5 @@ def init_config(app: Flask) -> None:
     app.config["SERVICE_UVICORN_HOST"] = settings.service_uvicorn_host
     app.config["SERVICE_UVICORN_PORT"] = settings.service_uvicorn_port
     app.config["JWT_SECRET_KEY"] = settings.jwt_secret_key
+    app.logger = setup_logger("ugc-logs")
+    app.logger.setLevel(logging.INFO)

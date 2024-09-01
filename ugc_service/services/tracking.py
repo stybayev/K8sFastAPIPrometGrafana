@@ -4,9 +4,9 @@ from functools import lru_cache
 from kafka.errors import NoBrokersAvailable
 from core.kafka import get_kafka_producer, send_to_kafka
 from schema.event import EventResponse
-import logging
+from core.logger_config import setup_logger
 
-logger = logging.getLogger(__name__)
+logger = setup_logger()
 
 
 class EventService:

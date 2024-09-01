@@ -1,7 +1,6 @@
 import os
 
 import orjson
-import logging
 
 from abc import ABC, abstractmethod
 from hashlib import md5
@@ -9,7 +8,7 @@ import requests
 from pydantic import ValidationError
 
 from app.models.base_model import PaginatedParams, BaseModel, SearchParams
-from app.models.film import Film
+from app.core.logger_config import setup_logger
 from elasticsearch import AsyncElasticsearch
 from elasticsearch.exceptions import NotFoundError
 from typing import TypeVar, Type, Generic, NoReturn, List
@@ -18,6 +17,8 @@ from redis.asyncio import Redis
 
 ModelType = TypeVar("ModelType", bound=BaseModel)
 PaginatedModel = TypeVar("PaginatedModel", bound=PaginatedParams)
+
+logger = setup_logger("app-logstash")
 
 
 class Repository(ABC):
@@ -82,7 +83,7 @@ class RepositoryElastic(Repository, Generic[ModelType, PaginatedModel]):
                 body=query_body
             )
         except Exception as e:
-            logging.error(f"Failed to fetch model from Elasticsearch: {e}")
+            logger.error(f"Failed to fetch model from Elasticsearch: {e}")
             return []
         models = []
         entities = response["hits"]["hits"]
@@ -94,7 +95,7 @@ class RepositoryElastic(Repository, Generic[ModelType, PaginatedModel]):
                     page_number=params.page_number
                 )
             except ValidationError as e:
-                logging.error(f"Error validating model data: {e}")
+                logger.error(f"Error validating model data: {e}")
                 continue
             models.append(model)
 
