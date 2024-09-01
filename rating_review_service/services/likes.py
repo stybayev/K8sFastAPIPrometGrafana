@@ -1,4 +1,3 @@
-# services/likes.py
 from functools import lru_cache
 from rating_review_service.db.mongo import get_db
 from rating_review_service.utils.enums import ShardedCollections

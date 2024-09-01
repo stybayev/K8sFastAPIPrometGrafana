@@ -3,7 +3,7 @@ from typing import Optional
 
 from bson import ObjectId
 from rating_review_service.db.mongo import get_db
-from rating_review_service.schema.review import Review, ReviewLike
+from rating_review_service.schema.review import Review
 from rating_review_service.utils.enums import ShardedCollections
 from fastapi import Depends, HTTPException, status
 
@@ -46,7 +46,9 @@ class ReviewService:
         dislikes_count = await self.review_likes_collection.count_documents({"review_id": review_id, "like": False})
         return {"likes": likes_count, "dislikes": dislikes_count}
 
-    async def get_reviews(self, movie_id: Optional[str], sort_by: Optional[str], order: Optional[str]):
+    async def get_reviews(self, movie_id: str | None,
+                          sort_by: str | None,
+                          order: str | None):
         query = {}
         if movie_id:
             query["movie_id"] = self.to_object_id(movie_id)
@@ -64,9 +66,19 @@ class ReviewService:
             {
                 "$lookup": {
                     "from": ShardedCollections.LIKES_COLLECTION.collection_name,
-                    "localField": "movie_id",
-                    "foreignField": "movie_id",
-                    "as": "movie_rating_info"
+                    "let": {"movie_id": "$movie_id", "user_id": "$user_id"},
+                    "pipeline": [
+                        {"$match": {
+                            "$expr": {
+                                "$and": [
+                                    {"$eq": ["$movie_id", "$$movie_id"]},
+                                    {"$eq": ["$user_id", "$$user_id"]}
+                                ]
+                            }
+                        }},
+                        {"$project": {"rating": 1, "_id": 0}}
+                    ],
+                    "as": "user_movie_rating"
                 }
             },
             {
@@ -75,18 +87,19 @@ class ReviewService:
                         "$filter": {"input": "$likes_info", "as": "like", "cond": {"$eq": ["$$like.like", True]}}}},
                     "dislikes": {"$size": {
                         "$filter": {"input": "$likes_info", "as": "like", "cond": {"$eq": ["$$like.like", False]}}}},
-                    "movie_rating": {"$avg": "$movie_rating_info.rating"},
-                    "id": {"$toString": "$_id"}  # Преобразуем ObjectId в строку и добавляем как поле `id`
+                    "user_rating": {"$arrayElemAt": ["$user_movie_rating.rating", 0]},
+                    "id": {"$toString": "$_id"}
                 }
             },
             {
                 "$project": {
                     "likes_info": 0,
-                    "movie_rating_info": 0
+                    "user_movie_rating": 0
                 }
             }
         ]
 
+        # Сортировка
         if sort_by:
             sort_order = 1 if order == "asc" else -1
             pipeline.append({"$sort": {sort_by: sort_order}})
