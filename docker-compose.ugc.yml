@@ -1,0 +1,220 @@
+version: '3.9'
+
+x-common-shard1: &common-shard1
+  image: mongo
+  command: mongod --shardsvr --replSet mongors1 --dbpath /data/db --port 27017
+  expose:
+    - "27017"
+  volumes:
+    - /etc/localtime:/etc/localtime:ro
+
+x-common-shard2: &common-shard2
+  image: mongo
+  command: mongod --shardsvr --replSet mongors2 --dbpath /data/db --port 27017
+  expose:
+    - "27017"
+  volumes:
+    - /etc/localtime:/etc/localtime:ro
+
+x-common-config: &common-config
+  image: mongo
+  command: mongod --configsvr --replSet mongors1conf --dbpath /data/db --port 27017
+  expose:
+    - "27017"
+  volumes:
+    - /etc/localtime:/etc/localtime:ro
+
+x-common-mongos: &common-mongos
+  image: mongo
+  depends_on:
+    - mongocfg1
+    - mongocfg2
+  command: mongos --configdb mongors1conf/mongocfg1:27017,mongocfg2:27017,mongocfg3:27017 --port 27017 --bind_ip_all
+  expose:
+    - "27017"
+  volumes:
+    - /etc/localtime:/etc/localtime:ro
+
+services:
+  mongors1n1:
+    <<: *common-shard1
+    container_name: mongors1n1
+    ports:
+      - 27017:27017
+    volumes:
+      - shard1_data1:/data/db
+
+  mongors1n2:
+    <<: *common-shard1
+    container_name: mongors1n2
+    ports:
+      - 27027:27017
+    volumes:
+      - shard1_data2:/data/db
+
+  mongors1n3:
+    <<: *common-shard1
+    container_name: mongors1n3
+    ports:
+      - 27037:27017
+    volumes:
+      - shard1_data3:/data/db
+
+  mongors2n1:
+    <<: *common-shard2
+    container_name: mongors2n1
+    ports:
+      - 27047:27017
+    volumes:
+      - shard2_data1:/data/db
+
+  mongors2n2:
+    <<: *common-shard2
+    container_name: mongors2n2
+    ports:
+      - 27057:27017
+    volumes:
+      - shard2_data2:/data/db
+
+  mongors2n3:
+    <<: *common-shard2
+    container_name: mongors2n3
+    ports:
+      - 27067:27017
+    volumes:
+      - shard2_data3:/data/db
+
+  mongocfg1:
+    <<: *common-config
+    container_name: mongocfg1
+    volumes:
+      - config1_data:/data/db
+
+  mongocfg2:
+    <<: *common-config
+    container_name: mongocfg2
+    volumes:
+      - config2_data:/data/db
+
+  mongocfg3:
+    <<: *common-config
+    container_name: mongocfg3
+    volumes:
+      - config3_data:/data/db
+
+  mongos1:
+    <<: *common-mongos
+    container_name: mongos1
+    ports:
+      - 27019:27017
+    healthcheck:
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
+
+  mongos2:
+    <<: *common-mongos
+    container_name: mongos2
+    ports:
+      - 27020:27017
+
+  init-config-replica:
+    image: mongo
+    depends_on:
+      - mongocfg1
+      - mongocfg2
+      - mongocfg3
+    volumes:
+      - ./rating_review_service/scripts:/scripts
+    entrypoint: bash /scripts/init_config_replica.sh
+    healthcheck:
+      test: [ "CMD", "mongosh", "--host", "mongocfg1", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
+
+  init-replica-set-mongors1:
+    image: mongo
+    depends_on:
+      - mongors1n1
+      - mongors1n2
+      - mongors1n3
+    volumes:
+      - ./rating_review_service/scripts:/scripts
+    entrypoint: bash /scripts/init_replica_set_mongors1.sh
+    healthcheck:
+      test: [ "CMD", "mongosh", "--host", "mongors1n1", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
+
+  init-replica-set-mongors2:
+    image: mongo
+    depends_on:
+      - mongors2n1
+      - mongors2n2
+      - mongors2n3
+    volumes:
+      - ./rating_review_service/scripts:/scripts
+    entrypoint: bash /scripts/init_replica_set_mongors2.sh
+    healthcheck:
+      test: [ "CMD", "mongosh", "--host", "mongors2n1", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
+
+  add-shards:
+    image: mongo
+    depends_on:
+      - mongos1
+      - init-replica-set-mongors1
+      - init-replica-set-mongors2
+    volumes:
+      - ./rating_review_service/scripts:/scripts
+    entrypoint: bash /scripts/add_shards.sh
+    healthcheck:
+      test: [ "CMD", "mongosh", "--host", "mongos1", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
+
+  create-user:
+    image: mongo
+    depends_on:
+      add-shards:
+        condition: service_healthy
+    env_file:
+      - .env
+    volumes:
+      - ./rating_review_service/scripts:/scripts
+    entrypoint: bash /scripts/init_mongo_user.sh
+
+  rating_review_service:
+    container_name: rating_review_service
+    build: ./rating_review_service
+    env_file:
+      - .env
+    restart: always
+    volumes:
+      - .:/app
+    ports:
+      - ${RATING_REVIEW_SERVICE_UVICORN_PORT}:${RATING_REVIEW_SERVICE_UVICORN_PORT}
+    depends_on:
+      - create-user
+
+volumes:
+  config1_data:
+  config2_data:
+  config3_data:
+  shard1_data1:
+  shard1_data2:
+  shard1_data3:
+  shard2_data1:
+  shard2_data2:
+  shard2_data3:
