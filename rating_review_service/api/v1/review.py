@@ -1,8 +1,8 @@
-from typing import Optional, List
+from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 
-from rating_review_service.schema.review import Review, ReviewResponse, ReviewLike, LikeDislikeResponse
+from rating_review_service.schema.review import Review, ReviewResponse, LikeDislikeResponse
 from rating_review_service.services.review import ReviewService, get_review_service
 
 router = APIRouter()
@@ -43,10 +43,11 @@ async def like_review(review_id: str, user_id: str, like: bool, service: ReviewS
 
 @router.get("/reviews/", response_model=List[ReviewResponse])
 async def get_reviews(
-        movie_id: Optional[str] = None,
-        sort_by: Optional[str] = Query(None,
-                                       description="Поле для сортировки: 'likes', 'dislikes', 'rating', 'publication_date'"),
-        order: Optional[str] = Query("desc", description="Порядок сортировки: 'asc' или 'desc'"),
+        movie_id: str | None = None,
+        sort_by: str | None = Query(
+            None,
+            description="Поле для сортировки: 'likes', 'dislikes', 'rating', 'publication_date'"),
+        order: str | None = Query("desc", description="Порядок сортировки: 'asc' или 'desc'"),
         service: ReviewService = Depends(get_review_service)
 ):
     """

@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
-from typing import Optional
 from uuid import uuid4
 from datetime import datetime
+from typing import Optional
 
 
 class Review(BaseModel):
@@ -10,11 +10,13 @@ class Review(BaseModel):
     text: str
     publication_date: datetime = Field(default_factory=datetime.utcnow)
     author: str
-    rating: int | None = Field(None, ge=0, le=10)
 
 
 class ReviewResponse(Review):
     id: str
+    likes: int = 0
+    dislikes: int = 0
+    user_rating: int | None = None
 
 
 class ReviewLike(BaseModel):
