@@ -1,9 +1,11 @@
 from fastapi.responses import ORJSONResponse
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
+from fastapi_jwt_auth import AuthJWT
 
 from rating_review_service.api.v1 import likes, review, bookmark
 from rating_review_service.core.config import settings
+from rating_review_service.core.jwt import JWTSettings
 from rating_review_service.db.mongo import shard_collections
 from rating_review_service.utils.enums import ShardedCollections
 from rating_review_service.utils.wait_for_mongo_ready import wait_for_mongo_ready
@@ -11,6 +13,7 @@ from rating_review_service.utils.wait_for_mongo_ready import wait_for_mongo_read
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    AuthJWT.load_config(lambda: JWTSettings())
     await wait_for_mongo_ready(settings.db.url)
     await shard_collections(ShardedCollections)
 
