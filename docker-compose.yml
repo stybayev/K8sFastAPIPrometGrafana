@@ -36,6 +36,7 @@ services:
     depends_on:
       - db
       - redis
+    restart: no
     command: alembic upgrade head
 
   django_admin:
