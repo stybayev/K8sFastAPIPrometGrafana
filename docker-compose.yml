@@ -1,0 +1,108 @@
+
+x-app: &app
+  env_file:
+    - .env
+  restart: always
+
+volumes:
+  dbdata:
+  redis_data:
+  static:
+  media:
+  flasgger_static:
+
+services:
+  auth:
+    container_name: auth
+    build: ./auth
+    <<: *app
+    volumes:
+      - .:/auth
+    expose:
+      - ${AUTH_API_UVICORN_PORT}
+    ports:
+      - ${AUTH_API_UVICORN_PORT}:${AUTH_API_UVICORN_PORT}
+    depends_on:
+      - db
+      - redis
+
+  api-migrations:
+    build: ./auth
+    <<: *app
+    volumes:
+      - .:/auth
+    depends_on:
+      - db
+      - redis
+    command: alembic upgrade head
+
+  django_admin:
+    build: django_admin
+    image: app-django-admin:dev
+    volumes:
+      - media:/opt/app/media
+      - static:/opt/app/static
+    depends_on:
+      - db
+    env_file:
+      - .env
+    expose:
+      - ${DJANGO_PORT}
+    restart: unless-stopped
+
+  db:
+    image: ghcr.io/dbsystel/postgresql-partman:14
+    container_name: db
+    shm_size: 1g
+    <<: *app
+    expose:
+      - 5432
+    ports:
+      - ${POSTGRES_PORT}:5432
+    env_file:
+      - .env
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+      - ./etl/dump.sql:/docker-entrypoint-initdb.d/dump.sql
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+    expose:
+      - 6379
+    ports:
+      - ${REDIS_PORT}:6379
+    volumes:
+      - redis_data:/var/lib/redis
+
+  nginx:
+    image: nginx:1.24
+    volumes:
+      - ./tmp/logs/nginx/:/var/log/nginx/
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/configs/:/etc/nginx/conf.d/:ro
+      - static:/data/static/:ro
+      - flasgger_static:/usr/share/nginx/html/flasgger_static/:ro
+      - flasgger_static:/data/flasgger_static/:ro
+    depends_on:
+      - auth
+      - rate_limit
+    ports:
+      - "80:80"
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    <<: *app
+    ports:
+      - ${JAEGER_UDP}:6831/udp
+      - ${JAEGER_PORT}:16686
+    command: [ "--log-level=debug" ]
+
+  rate_limit:
+    build: ./rate_limit
+    <<: *app
+    volumes:
+      - .:/rate_limit
+    depends_on:
+      - auth
