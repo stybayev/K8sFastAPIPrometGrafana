@@ -17,7 +17,7 @@ from auth.db.postgres import get_db_session
 from auth.db.redis import get_redis
 from auth.models.users import LoginHistory, Role, User, UserRole
 from auth.schema.tokens import TokenResponse
-from auth.schema.users import LoginHistoryResponse
+from auth.schema.users import LoginHistoryResponse, UserDetails
 from auth.services.tokens import TokenService
 from auth.utils.permissions import access_token_required, refresh_token_required
 
@@ -246,6 +246,26 @@ class UserService:
             )
             for h in history
         ]
+
+    async def get_user_details(self, user_id: uuid.UUID) -> UserDetails | None:
+        """
+        Получение полной информации о пользователе
+        """
+        user = await self.get_user_by_id(user_id)
+        if not user:
+            return None
+
+        roles = await self.get_user_roles(user_id)
+
+        return UserDetails(
+            id=user.id,
+            login=user.login,
+            email=user.email,
+            first_name=user.first_name,
+            last_name=user.last_name,
+            created_at=user.created_at,
+            roles=roles,
+        )
 
 
 @lru_cache()

@@ -1,7 +1,7 @@
 import uuid
 from typing import List
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, Request, status, HTTPException
 from fastapi_jwt_auth import AuthJWT
 
 from auth.core.tracer import traced
@@ -9,7 +9,7 @@ from auth.core.jwt import security_jwt
 from auth.schema.tokens import LoginRequest, TokenResponse
 from auth.schema.users import (LoginHistoryResponse,
                                UpdateUserCredentialsRequest, UserCreate,
-                               UserResponse)
+                               UserResponse, UserDetails)
 from auth.services.users import UserService, get_user_service
 
 from auth.utils.pagination import PaginatedParams
@@ -176,3 +176,33 @@ async def get_login_history(
     """
     history = await service.get_login_history(authorize, page_size=page_size, page_number=page_number)
     return history
+
+
+@router.get("/user-details", response_model=UserDetails)
+async def get_current_user(
+    request: Request,
+    service: UserService = Depends(get_user_service),
+    authorize: AuthJWT = Depends(),
+    user: dict = Depends(security_jwt),
+):
+    """
+    ## Получение данных текущего пользователя
+
+    Этот эндпоинт возвращает полную информацию о текущем авторизованном пользователе.
+
+    ### Возвращает:
+      - `id`: Уникальный идентификатор пользователя.
+      - `login`: Логин пользователя.
+      - `email`: Электронная почта пользователя.
+      - `first_name`: Имя пользователя.
+      - `last_name`: Фамилия пользователя.
+      - `created_at`: Дата создания аккаунта.
+      - `roles`: Список ролей пользователя.
+    """
+    authorize.jwt_required()
+
+    user_id = uuid.UUID(authorize.get_jwt_subject())
+    user_data = await service.get_user_details(user_id)
+    if not user_data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Пользователь не найден")
+    return user_data
