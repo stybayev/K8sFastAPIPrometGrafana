@@ -178,17 +178,20 @@ async def get_login_history(
     return history
 
 
-@router.get("/user-details", response_model=UserDetails)
-async def get_current_user(
-    request: Request,
-    service: UserService = Depends(get_user_service),
-    authorize: AuthJWT = Depends(),
-    user: dict = Depends(security_jwt),
+@router.get("/user-details/{user_id}", response_model=UserDetails)
+async def get_user_details_by_id(
+        user_id: uuid.UUID,
+        service: UserService = Depends(get_user_service),
+        authorize: AuthJWT = Depends(),
+        user: dict = Depends(security_jwt),
 ):
     """
-    ## Получение данных текущего пользователя
+    ## Получение данных пользователя по `user_id`
 
-    Этот эндпоинт возвращает полную информацию о текущем авторизованном пользователе.
+    Этот эндпоинт возвращает полную информацию о пользователе по его `user_id`.
+
+    ### Параметры:
+    - **user_id**: UUID пользователя, информацию о котором нужно получить.
 
     ### Возвращает:
       - `id`: Уникальный идентификатор пользователя.
@@ -201,7 +204,6 @@ async def get_current_user(
     """
     authorize.jwt_required()
 
-    user_id = uuid.UUID(authorize.get_jwt_subject())
     user_data = await service.get_user_details(user_id)
     if not user_data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Пользователь не найден")
