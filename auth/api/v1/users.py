@@ -39,9 +39,15 @@ async def register_user(request: Request, user: UserCreate, service: UserService
       - `first_name`: Имя пользователя.
       - `last_name`: Фамилия пользователя.
     """
-    new_user = await service.create_user(login=user.login, password=user.password, first_name=user.first_name,
-                                         last_name=user.last_name)
-    return UserResponse(id=new_user.id, login=new_user.login, first_name=new_user.first_name,
+    new_user = await service.create_user(login=user.login,
+                                         password=user.password,
+                                         first_name=user.first_name,
+                                         last_name=user.last_name,
+                                         email=user.email,)
+    return UserResponse(id=new_user.id,
+                        login=new_user.login,
+                        email=new_user.email,
+                        first_name=new_user.first_name,
                         last_name=new_user.last_name)
 
 
