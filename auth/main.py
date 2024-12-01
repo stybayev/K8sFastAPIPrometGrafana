@@ -17,6 +17,7 @@ from auth.core.tracer import init_tracer
 from auth.db import redis
 from auth.utils.exception_handlers import authjwt_exception_handler
 from auth.utils.sentry_hook import before_send
+from prometheus_fastapi_instrumentator import Instrumentator
 
 sentry_sdk.init(
     dsn=os.getenv("AUTH_SENTRY_DSN"),
@@ -54,6 +55,8 @@ app.add_exception_handler(AuthJWTException, authjwt_exception_handler)
 
 app.middleware("http")(before_request)
 app.middleware("http")(check_blacklist)
+
+Instrumentator().instrument(app).expose(app)
 
 app.include_router(users.router, prefix="/api/v1/auth/users", tags=["users"])
 app.include_router(roles.router, prefix="/api/v1/auth/roles", tags=["roles"])

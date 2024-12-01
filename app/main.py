@@ -15,6 +15,7 @@ from app.dependencies.main import setup_dependencies
 from app.utils.sentry_hook import before_send
 from auth.core.jwt import JWTSettings
 from auth.core.middleware import check_blacklist
+from prometheus_fastapi_instrumentator import Instrumentator
 
 sentry_sdk.init(
     dsn=os.getenv("APP_SENTRY_DSN"),
@@ -52,5 +53,7 @@ app.middleware("http")(check_blacklist)
 app.include_router(films.router, prefix="/api/v1/films", tags=["films"])
 app.include_router(genres.router, prefix="/api/v1/genres", tags=["genres"])
 app.include_router(persons.router, prefix="/api/v1/persons", tags=["persons"])
+
+Instrumentator().instrument(app).expose(app)
 
 setup_dependencies(app)

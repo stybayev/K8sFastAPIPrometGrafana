@@ -8,6 +8,7 @@ from flask_jwt_extended import JWTManager
 from core.config import init_config
 from core.middleware import check_blacklist
 from utils.sentry_hook import before_send
+from prometheus_fastapi_instrumentator import Instrumentator
 
 sentry_sdk.init(
     dsn=os.getenv("UGS_SERVICE_SENTRY_DSN"),
@@ -33,3 +34,5 @@ app.before_request(check_blacklist)
 
 # Регистрируем API
 app.register_blueprint(api, url_prefix='/tracking')
+
+Instrumentator().instrument(app).expose(app)
