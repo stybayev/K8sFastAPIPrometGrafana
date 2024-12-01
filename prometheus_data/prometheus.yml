@@ -1,0 +1,104 @@
+global:
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  evaluation_interval: 15s
+alerting:
+  alertmanagers:
+  - follow_redirects: true
+    enable_http2: true
+    scheme: http
+    timeout: 10s
+    api_version: v2
+    static_configs:
+    - targets: []
+scrape_configs:
+- job_name: prometheus
+  honor_timestamps: true
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  metrics_path: /metrics
+  scheme: http
+  follow_redirects: true
+  enable_http2: true
+  static_configs:
+  - targets:
+    - localhost:9090
+
+- job_name: 'auth'
+  scrape_interval: 10s
+  metrics_path: /metrics
+  static_configs:
+    - targets: ['auth:8082']
+
+- job_name: 'file_api'
+  scrape_interval: 10s
+  metrics_path: /metrics
+  static_configs:
+    - targets: ['file_api:8081']
+
+- job_name: 'ugc_service'
+  scrape_interval: 10s
+  metrics_path: /metrics
+  static_configs:
+    - targets: ['ugc_service:8084']
+
+- job_name: 'rating_review_service'
+  scrape_interval: 10s
+  metrics_path: /metrics
+  static_configs:
+    - targets: ['rating_review_service:8085']
+
+- job_name: 'django_admin'
+  scrape_interval: 10s
+  metrics_path: /metrics
+  static_configs:
+    - targets: ['django_admin:8001']
+
+- job_name: 'app'
+  scrape_interval: 10s
+  metrics_path: /metrics
+  static_configs:
+    - targets: ['app:8000']
+
+- job_name: 'redis'
+  scrape_interval: 10s
+  metrics_path: /metrics
+  static_configs:
+    - targets: ['redis:6379']
+
+- job_name: 'postgres'
+  scrape_interval: 10s
+  metrics_path: /metrics
+  static_configs:
+    - targets: ['db:5432']
+
+- job_name: 'minio'
+  scrape_interval: 10s
+  metrics_path: /minio/prometheus/metrics
+  static_configs:
+    - targets: ['minio:9000']
+
+- job_name: 'logstash'
+  scrape_interval: 10s
+  metrics_path: /_node/stats
+  static_configs:
+    - targets: ['logstash:9600']
+
+- job_name: 'kafka'
+  scrape_interval: 10s
+  metrics_path: /metrics
+  static_configs:
+    - targets: 
+        - 'kafka-0:9094'
+        - 'kafka-1:9095'
+        - 'kafka-2:9096'
+
+- job_name: 'clickhouse'
+  scrape_interval: 10s
+  metrics_path: /metrics
+  static_configs:
+    - targets: 
+        - 'clickhouse-node1:8123'
+        - 'clickhouse-node2:8124'
+        - 'clickhouse-node3:8125'
+        - 'clickhouse-node4:8126'

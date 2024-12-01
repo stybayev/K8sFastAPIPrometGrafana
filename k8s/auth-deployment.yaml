@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth
+  template:
+    metadata:
+      labels:
+        app: auth
+    spec:
+      containers:
+        - name: auth-container
+          image: dosxana/auth:latest
+          envFrom:
+            - secretRef:
+                name: env-secret
+          ports:
+            - containerPort: 8082
+          imagePullPolicy: IfNotPresent

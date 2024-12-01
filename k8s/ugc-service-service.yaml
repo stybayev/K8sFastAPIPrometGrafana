@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ugc-service-service
+spec:
+  selector:
+    app: ugc-service
+  ports:
+    - protocol: TCP
+      port: 8084
+  type: ClusterIP

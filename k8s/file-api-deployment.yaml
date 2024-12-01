@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: file-api-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: file-api
+  template:
+    metadata:
+      labels:
+        app: file-api
+    spec:
+      containers:
+        - name: file-api-container
+          image: dosxana/file-api:latest
+          envFrom:
+            - secretRef:
+                name: env-secret
+          ports:
+            - containerPort: 8081
+          imagePullPolicy: IfNotPresent

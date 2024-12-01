@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ugc-service-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ugc-service
+  template:
+    metadata:
+      labels:
+        app: ugc-service
+    spec:
+      containers:
+        - name: ugc-service-container
+          image: dosxana/ugc-service:latest
+          envFrom:
+            - secretRef:
+                name: env-secret
+          ports:
+            - containerPort: 8084
+          imagePullPolicy: IfNotPresent
