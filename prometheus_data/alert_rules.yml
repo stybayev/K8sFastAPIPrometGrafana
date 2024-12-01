@@ -1,0 +1,29 @@
+groups:
+  - name: alert_rules
+    rules:
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[1m])) * 100) > 80
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is above 80% on {{ $labels.instance }}."
+
+      - alert: LowDiskSpace
+        expr: node_filesystem_free_bytes / node_filesystem_size_bytes < 0.1
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low disk space on {{ $labels.instance }}"
+          description: "Disk space is below 10% on {{ $labels.instance }}."
+
+      - alert: MemoryUsageHigh
+        expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes < 0.2
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Available memory is below 20% on {{ $labels.instance }}."
